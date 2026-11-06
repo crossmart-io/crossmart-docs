@@ -17,7 +17,7 @@ store's **Listings** tab, and in the API and MCP tools as `displayState`.
 | **Removing**         | `removing`      | Being taken off the store                                          | Wait                                          |
 | **Removed**          | `removed`       | Off the store until you add it back                                | Add it to the store again if you want it back |
 
-## Fix a listing that needs details
+## When a listing needs details
 
 A **Needs details** listing says what is missing, with a button that opens the right place:
 
@@ -36,7 +36,7 @@ A **Needs details** listing says what is missing, with a button that opens the r
 Store setup (policies, listing setup, reconnecting) needs the Owner or Admin role; it holds back
 every product in that store until it's done. Product fixes apply to that product only.
 
-## Fix a failed listing
+## When a listing fails
 
 **Failed** means the store looked at the listing and refused it. The reason is the store's own
 message, such as eBay naming an item specific it needs. Fix what it says, in the product or in
