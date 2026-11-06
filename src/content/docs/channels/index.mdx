@@ -1,0 +1,46 @@
+---
+title: Channels
+description: The marketplaces and store platforms you can sell on with Crossmart, which are live and which are coming, and what each one syncs.
+---
+
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+A channel is a marketplace or store platform you sell on. Today you can sell on Shopify and eBay;
+Google Shopping and Etsy are coming soon. You connect one or more stores of a channel, and
+Crossmart publishes your catalog there and keeps it in step. See
+[Connect a store](/sellers/connect-a-store/) for the steps.
+
+| Channel                                       | Status      | Publish | Prices | Stock | Orders | Import catalog |
+| --------------------------------------------- | ----------- | :-----: | :----: | :---: | :----: | :------------: |
+| [Shopify](/channels/shopify/)                 | Live        |   Yes   |  Yes   |  Yes  |  Yes   |      Yes       |
+| [eBay](/channels/ebay/)                       | Live        |   Yes   |  Yes   |  Yes  |  Yes   |       No       |
+| [Google Shopping](/channels/google-shopping/) | Coming soon |   Yes   |  Yes   |  No   |   No   |       No       |
+| [Etsy](/channels/etsy/)                       | Coming soon |   Yes   |  Yes   |  Yes  |  Yes   |       No       |
+
+For channels that are coming soon, the table shows what the connector is built to do. Google
+Shopping gets each product's availability (in or out of stock) when it is published or updated,
+not every stock change. Amazon, Walmart and TikTok Shop are planned; the **Channels** page in the
+dashboard shows each channel's current status.
+
+<CardGrid>
+  <LinkCard
+    title="Shopify"
+    href="/channels/shopify/"
+    description="Products, variants, images, prices and stock, orders, and importing your existing catalog."
+  />
+  <LinkCard
+    title="eBay"
+    href="/channels/ebay/"
+    description="Eight marketplaces, business policies, categories and item specifics."
+  />
+  <LinkCard
+    title="Google Shopping"
+    href="/channels/google-shopping/"
+    description="Products in Google Shopping and free listings, through Merchant Center. Coming soon."
+  />
+  <LinkCard
+    title="Etsy"
+    href="/channels/etsy/"
+    description="Listings with variations, images and stock, and Etsy orders. Coming soon."
+  />
+</CardGrid>

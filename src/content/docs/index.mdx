@@ -3,17 +3,70 @@ title: Crossmart documentation
 description: Documentation for Crossmart, the open-source multichannel platform for sellers and their AI agents.
 template: splash
 hero:
-  tagline: Crossmart is the open-source multichannel platform for sellers and their AI agents. Build on its REST API, SDKs and MCP server.
+  tagline: Crossmart is the open-source multichannel platform for sellers and their AI agents. Publish one catalog to every store, keep stock in sync, and let your AI agent run it.
   actions:
+    - text: Get started
+      link: /sellers/
+      icon: right-arrow
+    - text: Connect your AI agent
+      link: /agents/
+      variant: minimal
     - text: Developer quickstart
       link: /developers/quickstart/
-      icon: right-arrow
-    - text: API reference
-      link: /developers/api/
       variant: minimal
 ---
 
 import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+## For sellers
+
+<CardGrid>
+  <LinkCard
+    title="Getting started"
+    href="/sellers/"
+    description="What Crossmart does, the words it uses, and your first steps."
+  />
+  <LinkCard
+    title="Connect a store"
+    href="/sellers/connect-a-store/"
+    description="Connect Shopify or eBay and bring your products in."
+  />
+  <LinkCard
+    title="Listing states"
+    href="/sellers/listing-states/"
+    description="What each state means, and how to fix a listing that needs details or failed."
+  />
+  <LinkCard
+    title="Pricing"
+    href="/sellers/pricing/"
+    description="Price a whole store with a rule, or one product in one store."
+  />
+  <LinkCard
+    title="Channels"
+    href="/channels/"
+    description="Shopify, eBay, Google Shopping and Etsy: what each one syncs."
+  />
+  <LinkCard
+    title="Stock and orders"
+    href="/sellers/stock/"
+    description="One stock count for every store, held by orders the moment they arrive."
+  />
+</CardGrid>
+
+## For AI agents
+
+<CardGrid>
+  <LinkCard
+    title="Connect your AI agent"
+    href="/agents/"
+    description="Sign in with OAuth or use an API key, from Claude, ChatGPT, Cursor and more."
+  />
+  <LinkCard
+    title="Crossmart skill"
+    href="/agents/skill/"
+    description="Teach your agent the seller workflows on top of the MCP server."
+  />
+</CardGrid>
 
 ## For developers
 
@@ -47,5 +100,10 @@ import { CardGrid, LinkCard } from '@astrojs/starlight/components';
     title="API reference"
     href="/developers/api/"
     description="Every endpoint and field, generated from the OpenAPI spec."
+  />
+  <LinkCard
+    title="n8n"
+    href="/integrations/n8n/"
+    description="Automate products, stock, listings and orders with n8n workflows."
   />
 </CardGrid>

@@ -1,0 +1,59 @@
+---
+title: VS Code (GitHub Copilot)
+description: Connect VS Code's GitHub Copilot agent mode to Crossmart's MCP server with an API key that VS Code stores securely, and install the Crossmart skill.
+---
+
+Checked on 2026-11-06 against
+[code.visualstudio.com: MCP configuration](https://code.visualstudio.com/docs/agents/reference/mcp-configuration),
+[MCP servers](https://code.visualstudio.com/docs/copilot/customization/mcp-servers) and
+[agent skills](https://code.visualstudio.com/docs/copilot/customization/agent-skills). An API key
+header is supported.
+
+## Connect
+
+Create a key ([how](/agents/#or-use-an-api-key)). Run **MCP: Open User Configuration** (every
+workspace) or create `.vscode/mcp.json` (one workspace) and add:
+
+```json
+{
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "crossmart-api-key",
+      "description": "Crossmart API key",
+      "password": true
+    }
+  ],
+  "servers": {
+    "crossmart": {
+      "type": "http",
+      "url": "https://mcp.crossmart.io/mcp",
+      "headers": { "x-api-key": "${input:crossmart-api-key}" }
+    }
+  }
+}
+```
+
+VS Code asks for the key the first time the server starts and stores it securely, so the file
+holds no secret and can be committed.
+
+`${input:…}` servers are not forwarded to Copilot harness sessions. There, use
+`"x-api-key": "${env:CROSSMART_API_KEY}"` instead and set the variable in your environment.
+
+VS Code is moving to a portable format (`~/.copilot/mcp-config.json`, top-level `mcpServers`,
+`${CROSSMART_API_KEY}` variables); the `servers` format above still works.
+
+## Check
+
+**MCP: List Servers** shows **crossmart** running; in Copilot Chat's agent mode the tools picker
+lists its tools.
+
+## Install the skill
+
+```bash
+git clone --depth 1 https://github.com/crossmart-io/crossmart.git /tmp/crossmart
+cp -R /tmp/crossmart/skills/crossmart ~/.copilot/skills/      # or .github/skills/ in a project
+```
+
+VS Code also reads `~/.claude/skills/` and `.claude/skills/`. The repository is private for now;
+see [the Crossmart skill](/agents/skill/).

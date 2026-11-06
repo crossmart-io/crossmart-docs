@@ -1,0 +1,62 @@
+---
+title: The Crossmart skill
+description: The Crossmart agent skill teaches AI agents the seller workflows on top of the MCP server. What it covers and how to install it in each agent.
+sidebar:
+  label: Crossmart skill
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+The Crossmart skill is an [Agent Skill](https://agentskills.io): a folder with a `SKILL.md` that
+teaches an AI agent how to work with Crossmart on top of the [MCP server](/agents/). It covers:
+
+- connecting a store and checking that it's ready to publish;
+- adding and publishing products, and reading [listing states](/sellers/listing-states/);
+- fixing listings that need details, and retrying failed ones;
+- eBay categories and item specifics;
+- stock adjustments, orders and reports;
+- safety rules: confirm bulk and destructive actions, never ask for marketplace passwords, keep
+  API keys out of the chat.
+
+The skill needs the MCP server connected first. Pick your agent's guide in
+[Connect your AI agent](/agents/). Agents without skill support still get the essential guidance
+from the tools' own descriptions.
+
+<Aside type="caution" title="Available when the repository opens">
+  The skill lives in the Crossmart repository on GitHub, which is private for now and becomes public
+  later. Until then, the commands below that clone it or install from GitHub won't work.
+</Aside>
+
+## Install
+
+Every agent reads the same folder. Get it once:
+
+```bash
+git clone --depth 1 https://github.com/crossmart-io/crossmart.git /tmp/crossmart
+```
+
+| Agent                            | Install                                                                                                         |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Any agent the `skills` CLI knows | `npx skills add crossmart-io/crossmart --skill crossmart` (add `-g` for all projects, `-a <agent>` to pick one) |
+| Claude Code                      | `cp -R /tmp/crossmart/skills/crossmart ~/.claude/skills/` (or `.claude/skills/` in a project)                   |
+| claude.ai and Claude Desktop     | Zip the `crossmart` folder, then **Customize → Skills → + → Upload a skill**. Needs code execution turned on.   |
+| OpenClaw                         | `openclaw skills install /tmp/crossmart/skills/crossmart --as crossmart`                                        |
+| OpenAI Codex, Goose, Zed         | `cp -R /tmp/crossmart/skills/crossmart ~/.agents/skills/`                                                       |
+| Gemini CLI                       | `gemini skills install https://github.com/crossmart-io/crossmart.git --path skills/crossmart --scope user`      |
+| Cursor                           | `cp -R /tmp/crossmart/skills/crossmart ~/.cursor/skills/` (it also reads `~/.agents/skills/`)                   |
+| VS Code (GitHub Copilot)         | `cp -R /tmp/crossmart/skills/crossmart ~/.copilot/skills/` (or `.github/skills/` in a project)                  |
+| Windsurf (Devin Desktop)         | `cp -R /tmp/crossmart/skills/crossmart ~/.config/devin/skills/`                                                 |
+| Cline                            | `cp -R /tmp/crossmart/skills/crossmart ~/.cline/skills/`                                                        |
+| Hermes Agent                     | `hermes skills install crossmart-io/crossmart/skills/crossmart`                                                 |
+| Continue, ChatGPT, Meta Muse     | No documented `SKILL.md` support. The MCP tool descriptions still guide the agent.                              |
+
+For Claude, the zip must contain the `crossmart` folder with `SKILL.md` inside. See
+[Using skills in Claude](https://support.claude.com/en/articles/12512180-using-skills-in-claude).
+
+## Compatibility
+
+`SKILL.md` uses only the fields of the
+[Agent Skills specification](https://agentskills.io/specification) (`name`, `description`,
+`license`, `compatibility` and `metadata`), so every agent that reads skills accepts it. It stays
+short and loads its detailed references only when a workflow needs them. The skill is licensed
+under MIT-0.

@@ -1,0 +1,147 @@
+---
+title: Connect your AI agent
+description: Connect Claude, ChatGPT, Cursor, VS Code, Codex, Gemini CLI and other AI agents to Crossmart's MCP server, with OAuth sign-in or an API key.
+sidebar:
+  label: Overview
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+
+Crossmart works with any AI agent that speaks the [Model Context Protocol](https://modelcontextprotocol.io)
+(MCP). Once connected, the agent can look up products and stock, create and edit products, publish
+them to your stores and fix listings that need details, read orders and reports, and ask
+Crossmart's AI for content that you then approve.
+
+|                |                                                                              |
+| -------------- | ---------------------------------------------------------------------------- |
+| Server URL     | `https://mcp.crossmart.io/mcp` (Streamable HTTP)                             |
+| Authentication | OAuth sign-in, or an API key in `x-api-key` or `Authorization: Bearer <key>` |
+| Tools          | Products, stock, stores, listings, eBay, orders, reports, content, Ask       |
+
+The [MCP server reference](/developers/mcp/) lists every tool.
+
+## Before you start
+
+Connect your stores in the dashboard (**Channels**). Agents can't connect stores: the marketplace
+asks you to approve access yourself.
+
+## Sign in with OAuth
+
+The simplest way: add the server's URL to your agent, then sign in to Crossmart in the browser. No
+key is copied or pasted, and each person connects with their own account.
+
+<Steps>
+
+1. Add `https://mcp.crossmart.io/mcp` to your agent without a key. For Claude Code:
+
+   ```bash
+   claude mcp add --transport http crossmart https://mcp.crossmart.io/mcp
+   ```
+
+   Then, in a Claude Code session, run `/mcp`, choose **crossmart** and **Authenticate**.
+
+2. Your browser opens Crossmart. Sign in, and choose the **workspace** the agent works in.
+
+3. Review what the agent asks for, and choose **Everything it asks for** or **Read only** (it can
+   look, but not change anything). Approve.
+
+</Steps>
+
+The agent then works in that workspace only, and never with more than your own role allows. It can
+never manage members, API keys, store connections, settings or billing.
+
+See and disconnect your agents under **Settings → Connected agents**. Disconnecting signs the
+agent out at once.
+
+| Access the agent asks for | It lets the agent                              |
+| ------------------------- | ---------------------------------------------- |
+| Catalog, read             | See products, stock, stores and AI suggestions |
+| Catalog, write            | Create and change products, prices and stock   |
+| Orders, read              | See orders                                     |
+| Stores, write             | Add products to stores and take them off       |
+| Reports, read             | See sales and stock reports                    |
+| Suggestions, write        | Ask for AI content and approve suggestions     |
+
+Read-only access keeps the three read permissions.
+
+## Or use an API key
+
+For agents that can't sign in, or for scripts and shared setups, use a workspace API key.
+
+<Steps>
+
+1. In the dashboard, open **Settings → API keys** and create a key. Name it after the agent so
+   it's easy to find and revoke.
+
+2. Pick the smallest role that works:
+   - **Viewer**: questions only ("which products are low on stock?").
+   - **Editor**: also edit products and stock, publish to stores and generate content. AI
+     content still waits for a person to approve it.
+   - **Approver** or **Admin**: may also approve suggestions. Give an agent this only on purpose.
+
+3. Put the key in the agent's configuration or in an environment variable
+   (`CROSSMART_API_KEY`). Never paste it into a chat.
+
+</Steps>
+
+A key works in exactly one workspace. See [Roles and permissions](/developers/permissions/).
+
+## Pick your agent
+
+Each guide was checked against the platform's official documentation on 2026-11-06. "Unverified"
+means the official docs don't confirm every detail; the guide says which.
+
+| Agent                                         | OAuth sign-in          | API key header                | Skill        | Status     |
+| --------------------------------------------- | ---------------------- | ----------------------------- | ------------ | ---------- |
+| [Claude Code](/agents/claude-code/)           | Yes                    | Yes                           | Yes          | Verified   |
+| [Claude Desktop](/agents/claude-desktop/)     | Yes (custom connector) | Through a local bridge        | Upload (zip) | Verified   |
+| [claude.ai](/agents/claude-ai/)               | Yes                    | Beta organizations only       | Upload (zip) | Verified   |
+| [ChatGPT](/agents/chatgpt/)                   | Yes                    | No                            | No           | Verified   |
+| [Cursor](/agents/cursor/)                     |                        | Yes                           | Yes          | Verified   |
+| [Windsurf (Devin Desktop)](/agents/windsurf/) |                        | Yes                           | Yes          | Verified   |
+| [VS Code (GitHub Copilot)](/agents/vscode/)   |                        | Yes                           | Yes          | Verified   |
+| [Zed](/agents/zed/)                           | Yes                    | Yes (`Authorization: Bearer`) | Yes          | Verified   |
+| [Cline](/agents/cline/)                       |                        | Yes                           | Yes          | Verified   |
+| [Continue](/agents/continue/)                 |                        | Probably                      | No           | Unverified |
+| [OpenAI Codex CLI](/agents/codex/)            |                        | Yes                           | Yes          | Verified   |
+| [Gemini CLI](/agents/gemini-cli/)             |                        | Yes                           | Yes          | Verified   |
+| [OpenClaw](/agents/openclaw/)                 |                        | Yes                           | Yes          | Verified   |
+| [Meta Muse](/agents/meta-muse/)               | Reported               | Not documented                | No           | Unverified |
+| [Goose](/agents/goose/)                       |                        | Yes (`goose configure`)       | Yes          | Unverified |
+| [Hermes Agent](/agents/hermes-agent/)         |                        | Yes                           | Yes          | Verified   |
+
+An empty OAuth cell means the guide covers the API key. Many of these clients can also sign in to
+MCP servers with OAuth: add the URL without a key and follow the client's own sign-in prompt.
+
+The [Crossmart skill](/agents/skill/) teaches an agent the seller workflows on top of the tools.
+
+## Try it
+
+Once connected, ask the agent things like:
+
+- "Which products are out of stock, and on which stores are they listed?"
+- "Create a draft product for a blue ceramic mug at $18 with 25 in stock."
+- "Add every active mug to my Shopify store."
+- "Which of my eBay listings failed, and what do they need?"
+- "How did sales in the last 7 days compare with the week before?"
+- "Write better titles for my 10 best sellers on eBay." (they arrive as suggestions to approve)
+
+## Something not working?
+
+- **The server won't connect (HTTP 401):** the client sent no key and didn't sign in. Check the
+  header name and that the environment variable is set where the client runs, or sign in with
+  OAuth.
+- **Tools answer `Crossmart refused (401)`:** the key is wrong or revoked, or the agent was
+  disconnected. Create a new key, or sign in again.
+- **`403 Requires the … permission`:** the key's role, or the access you approved, is too small
+  for that tool.
+- **The client asks you to sign in although you set a key:** it found no `Authorization` header
+  and started OAuth. Sign in, or send the key as `Authorization: Bearer <key>` (see
+  [Zed](/agents/zed/)).
+- **Another platform:** any client that can send a header to a Streamable HTTP server works. Write
+  to [hello@crossmart.io](mailto:hello@crossmart.io) and we'll add a guide.
+
+<Aside type="caution" title="What agents can't do">
+  Agents can't connect stores, act outside their workspace, or apply AI content on their own with an
+  Editor key: AI content arrives as suggestions for a person to approve in **Suggestions**.
+</Aside>

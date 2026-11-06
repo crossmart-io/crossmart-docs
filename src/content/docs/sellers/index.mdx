@@ -1,0 +1,87 @@
+---
+title: Getting started with Crossmart
+description: What Crossmart does, the words it uses, and the first steps from a new workspace to products live on your stores.
+sidebar:
+  label: Getting started
+---
+
+import { CardGrid, LinkCard, Steps } from '@astrojs/starlight/components';
+
+Crossmart keeps one catalog and one stock ledger for your business, and publishes them to every
+store you connect. You add a product once, choose the stores it sells on, and Crossmart creates
+and updates the listings there. When an order arrives from any store, its stock is held at once
+and every other store gets the new quantity, so you don't sell what you no longer have.
+
+Everything you do in the dashboard, at [app.crossmart.io](https://app.crossmart.io), can also be
+done by an [AI agent](/agents/) or through the [REST API](/developers/).
+
+## The words Crossmart uses
+
+| Word             | Meaning                                                                                                                                                      |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Workspace**    | One business, with its own catalog, stock, stores, orders and members. An organization (your account) can hold several.                                      |
+| **Product**      | A catalog item with a title, description, images and tags, and one or more **variants** (such as sizes or colours), each with its own SKU, price and stock.  |
+| **Channel**      | A place you sell, such as Shopify or eBay. See [Channels](/channels/).                                                                                       |
+| **Store**        | One connected account on a channel: a Shopify store, or an eBay account on one marketplace. You can connect several stores of the same channel.              |
+| **Listing**      | A product on one store. Each listing has a [state](/sellers/listing-states/) and can show the product [differently in that store](/sellers/listing-editor/). |
+| **Pricing rule** | How a store prices every product: a markup or discount, rounding, a floor. See [Pricing](/sellers/pricing/).                                                 |
+| **Suggestion**   | A change proposed by Crossmart's AI, such as a new title for one store. Nothing changes until a person approves it in **Suggestions**.                       |
+
+## First steps
+
+<Steps>
+
+1. **Connect a store.** Open **Channels**, pick the channel and click **Connect**. You approve
+   Crossmart on the channel's own site. See [Connect a store](/sellers/connect-a-store/).
+
+2. **Add your products.** Create them in **Products**, import a Shopify product export in
+   **Imports**, or import the catalog of a connected Shopify store.
+
+3. **Finish the store's setup.** Some channels need details before they can publish, such as
+   eBay's business policies and ship-from address. The store's page says what is missing.
+
+4. **Publish.** Add products to the store from the product's page, from the products table, or
+   with the store's automatic rule. See [Publish products](/sellers/publish-products/).
+
+5. **Check the listings.** The store's **Listings** tab shows where each product stands, and
+   what to fix when a store refuses one. See [Listing states](/sellers/listing-states/).
+
+</Steps>
+
+## Who can do what
+
+Every member of a workspace has a role. Owners and Admins connect stores and set pricing rules;
+Editors manage products and stock and publish them; Approvers review AI suggestions; Viewers can
+look but not change anything. See [Roles and permissions](/developers/permissions/) for the full
+list.
+
+## Plans
+
+Plans differ by the number of active listings, connected stores and other limits. See the plans
+at [crossmart.io/#pricing](https://crossmart.io/#pricing). Your current plan and usage are under
+**Settings → Plan & usage**.
+
+## Next
+
+<CardGrid>
+  <LinkCard
+    title="Connect a store"
+    href="/sellers/connect-a-store/"
+    description="Shopify, eBay and the other channels, and what each one asks for."
+  />
+  <LinkCard
+    title="Publish products"
+    href="/sellers/publish-products/"
+    description="Add products to a store by hand, in bulk, or with an automatic rule."
+  />
+  <LinkCard
+    title="Listing states"
+    href="/sellers/listing-states/"
+    description="What each state means and how to fix a listing that needs details or failed."
+  />
+  <LinkCard
+    title="Connect an AI agent"
+    href="/agents/"
+    description="Let Claude, ChatGPT, Cursor and other agents work with your catalog."
+  />
+</CardGrid>
