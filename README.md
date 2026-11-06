@@ -52,3 +52,7 @@ CROSSMART_OPENAPI_URL=http://localhost:3000/api/docs-json pnpm openapi:sync   # 
 
 The site is static. The `Dockerfile` builds it and serves `dist/` with nginx on `$PORT`
 (`deploy/nginx.conf.template`), the same way as the marketing site.
+
+## License
+
+The documentation is licensed under [CC BY 4.0](LICENSE). Code samples in it may be used under the same terms as the Crossmart code they document (AGPL-3.0).

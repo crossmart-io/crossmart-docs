@@ -37,5 +37,6 @@
     "overrides": {
       "@emnapi/runtime": "^1.11.3"
     }
-  }
+  },
+  "license": "CC-BY-4.0"
 }
