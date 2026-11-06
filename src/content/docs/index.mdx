@@ -1,0 +1,51 @@
+---
+title: Crossmart documentation
+description: Documentation for Crossmart, the open-source multichannel platform for sellers and their AI agents.
+template: splash
+hero:
+  tagline: Crossmart is the open-source multichannel platform for sellers and their AI agents. Build on its REST API, SDKs and MCP server.
+  actions:
+    - text: Developer quickstart
+      link: /developers/quickstart/
+      icon: right-arrow
+    - text: API reference
+      link: /developers/api/
+      variant: minimal
+---
+
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+## For developers
+
+<CardGrid>
+  <LinkCard
+    title="Developer overview"
+    href="/developers/"
+    description="The REST API: authentication, workspaces, errors, pagination and rate limits."
+  />
+  <LinkCard
+    title="Quickstart"
+    href="/developers/quickstart/"
+    description="From product to store to order, with curl and the TypeScript SDK."
+  />
+  <LinkCard
+    title="TypeScript SDK"
+    href="/developers/sdks/typescript/"
+    description="Typed from the OpenAPI spec, for Node.js and browsers."
+  />
+  <LinkCard
+    title="Python SDK"
+    href="/developers/sdks/python/"
+    description="Synchronous and asynchronous clients for Python 3.11+."
+  />
+  <LinkCard
+    title="MCP server"
+    href="/developers/mcp/"
+    description="Connect Claude Code, Cursor, Claude Desktop and other AI agents."
+  />
+  <LinkCard
+    title="API reference"
+    href="/developers/api/"
+    description="Every endpoint and field, generated from the OpenAPI spec."
+  />
+</CardGrid>

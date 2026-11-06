@@ -1,0 +1,12 @@
+/* Crossmart brand colours on Starlight's theme variables (https://starlight.astro.build/guides/css-and-tailwind/). */
+:root {
+  --sl-color-accent-low: #10204f;
+  --sl-color-accent: #4f83ff;
+  --sl-color-accent-high: #c9d8ff;
+}
+
+:root[data-theme='light'] {
+  --sl-color-accent-low: #e6edfd;
+  --sl-color-accent: #2759f5;
+  --sl-color-accent-high: #1a43c9;
+}
