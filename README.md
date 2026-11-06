@@ -25,16 +25,22 @@ build also writes `llms.txt`, `llms-full.txt` and `llms-small.txt` for AI agents
 
 ## Structure
 
-| Path                           | What                                                     |
-| ------------------------------ | -------------------------------------------------------- |
-| `src/content/docs/`            | Pages, in Markdown or MDX; the path is the URL           |
-| `src/content/docs/developers/` | The developer guide: API overview, quickstart, SDKs, MCP |
-| `openapi/crossmart.json`       | Snapshot of the API's OpenAPI spec                       |
-| `astro.config.mjs`             | Site config and the sidebar                              |
-| `src/styles/theme.css`         | Brand colours on Starlight's theme variables             |
+| Path                             | What                                                                   |
+| -------------------------------- | ---------------------------------------------------------------------- |
+| `src/content/docs/`              | Pages, in Markdown or MDX; the path is the URL                         |
+| `src/content/docs/developers/`   | The developer guide: API overview, quickstart, SDKs, MCP               |
+| `src/content/docs/sellers/`      | The seller guide: stores, publishing, listings, pricing, stock, orders |
+| `src/content/docs/channels/`     | One page per channel                                                   |
+| `src/content/docs/agents/`       | AI agent setup guides and the Crossmart skill                          |
+| `src/content/docs/integrations/` | Integrations such as n8n                                               |
+| `openapi/crossmart.json`         | Snapshot of the API's OpenAPI spec                                     |
+| `astro.config.mjs`               | Site config and the sidebar                                            |
+| `src/styles/theme.css`           | Brand colours on Starlight's theme variables                           |
 
-The developer guide follows `docs/developers/` and `sdks/*/README.md` in
-[crossmart-io/crossmart](https://github.com/crossmart-io/crossmart). Change both together.
+The developer, agent, channel and n8n pages follow `docs/developers/`, `docs/channels/`,
+`skills/` and `sdks/*/README.md` in [crossmart-io/crossmart](https://github.com/crossmart-io/crossmart).
+Change both together. Ask Crossmart answers from these pages: after a change, rebuild its knowledge
+index in the backend (`pnpm knowledge:build`).
 
 ### API reference
 

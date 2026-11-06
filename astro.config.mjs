@@ -50,6 +50,61 @@ export default defineConfig({
       ],
       sidebar: [
         {
+          label: 'Sellers',
+          items: [
+            { label: 'Getting started', link: '/sellers/' },
+            { label: 'Connect a store', link: '/sellers/connect-a-store/' },
+            { label: 'Publish products', link: '/sellers/publish-products/' },
+            { label: 'Listing states', link: '/sellers/listing-states/' },
+            { label: 'The listing editor', link: '/sellers/listing-editor/' },
+            { label: 'Pricing', link: '/sellers/pricing/' },
+            { label: 'Stock sync', link: '/sellers/stock/' },
+            { label: 'Orders', link: '/sellers/orders/' },
+          ],
+        },
+        {
+          label: 'Channels',
+          items: [
+            { label: 'Overview', link: '/channels/' },
+            { label: 'Shopify', link: '/channels/shopify/' },
+            { label: 'eBay', link: '/channels/ebay/' },
+            { label: 'Google Shopping', link: '/channels/google-shopping/' },
+            { label: 'Etsy', link: '/channels/etsy/' },
+          ],
+        },
+        {
+          label: 'AI agents',
+          items: [
+            { label: 'Overview', link: '/agents/' },
+            { label: 'Crossmart skill', link: '/agents/skill/' },
+            {
+              label: 'Setup guides',
+              items: [
+                { label: 'Claude Code', link: '/agents/claude-code/' },
+                { label: 'Claude Desktop', link: '/agents/claude-desktop/' },
+                { label: 'claude.ai', link: '/agents/claude-ai/' },
+                { label: 'ChatGPT', link: '/agents/chatgpt/' },
+                { label: 'Cursor', link: '/agents/cursor/' },
+                { label: 'VS Code (GitHub Copilot)', link: '/agents/vscode/' },
+                { label: 'Windsurf (Devin Desktop)', link: '/agents/windsurf/' },
+                { label: 'Zed', link: '/agents/zed/' },
+                { label: 'Cline', link: '/agents/cline/' },
+                { label: 'Continue', link: '/agents/continue/' },
+                { label: 'Codex CLI', link: '/agents/codex/' },
+                { label: 'Gemini CLI', link: '/agents/gemini-cli/' },
+                { label: 'OpenClaw', link: '/agents/openclaw/' },
+                { label: 'Goose', link: '/agents/goose/' },
+                { label: 'Hermes Agent', link: '/agents/hermes-agent/' },
+                { label: 'Meta Muse', link: '/agents/meta-muse/' },
+              ],
+            },
+          ],
+        },
+        {
+          label: 'Integrations',
+          items: [{ label: 'n8n', link: '/integrations/n8n/' }],
+        },
+        {
           label: 'Developers',
           items: [
             { label: 'Overview', link: '/developers/' },

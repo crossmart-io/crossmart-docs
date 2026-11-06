@@ -104,12 +104,14 @@ requires one permission; a key without it gets `403 Requires the <permission> pe
 permissions of each role are in [Roles and permissions](/developers/permissions/). Give each
 integration its own key with the smallest role that works, so you can revoke it alone.
 
-### OAuth for AI agents (coming soon)
+### OAuth for AI agents
 
-AI agents such as Claude and ChatGPT will be able to connect through OAuth instead of a pasted
-key: the seller signs in, picks a workspace and approves the access. The agent then sends an
-access token as `Authorization: Bearer <token>`, limited to the scopes the seller approved and to
-their own role. The SDKs already accept an access token.
+AI agents such as Claude and ChatGPT connect to the [MCP server](/developers/mcp/) through OAuth
+instead of a pasted key: the seller signs in, picks a workspace and approves the access, full or
+read-only. The agent then sends an access token as `Authorization: Bearer <token>`, limited to the
+scopes the seller approved, to their own role and to that workspace. The SDKs accept an access
+token. Sellers see and disconnect their agents under **Settings → Connected agents**. See
+[Connect your AI agent](/agents/#sign-in-with-oauth).
 
 ### Sessions
 
@@ -196,4 +198,4 @@ or `ERROR` (with the store's message in `lastError`) when it refuses. The
 - [MCP server for AI agents](/developers/mcp/)
 - [Roles and permissions](/developers/permissions/)
 - [API reference](/developers/api/)
-- [Architecture](https://github.com/crossmart-io/crossmart/blob/main/docs/architecture.md), for contributors
+- [Agent setup guides](/agents/) and [n8n nodes](/integrations/n8n/)

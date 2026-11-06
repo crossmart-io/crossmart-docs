@@ -78,7 +78,7 @@ Every setting can come from the environment instead:
 With an API key you don't need `workspace_id`: the client asks the API which workspace the key
 belongs to (`GET /api/v1/api-key`) the first time it needs it.
 
-AI agents that connect to Crossmart through OAuth (coming soon) get an access token instead of an
+AI agents that connect to Crossmart through OAuth get an access token instead of an
 API key. Pass it as `access_token`, together with `workspace_id`; the client sends it as
 `Authorization: Bearer <token>`.
 

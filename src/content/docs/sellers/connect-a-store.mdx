@@ -1,0 +1,77 @@
+---
+title: Connect a store
+description: Connect a Shopify store or an eBay account to Crossmart, import an existing catalog, finish the store's setup, and reconnect or disconnect it.
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+
+A store is one account on a channel: a Shopify store, or an eBay account on one marketplace.
+Crossmart never asks for your marketplace password. You sign in on the channel's own site and
+approve Crossmart there, and the channel sends you back.
+
+Connecting a store needs the **Owner** or **Admin** role, and your plan sets how many stores you
+can connect.
+
+## Connect
+
+<Steps>
+
+1. Open **Channels** in the dashboard and pick the channel.
+
+2. Click **Connect** and name the account:
+   - **Shopify:** your store's domain, the `your-store` part of `your-store.myshopify.com`. Find
+     it in your Shopify admin under **Settings → Domains**. Your own domain won't work here.
+   - **eBay:** the marketplace you sell on, such as eBay US or eBay UK. Connect each marketplace
+     separately; you sign in with the same eBay account.
+
+3. Sign in on the channel and approve Crossmart. You come back to the store's page in Crossmart.
+
+</Steps>
+
+Each channel's page has the details: [Shopify](/channels/shopify/), [eBay](/channels/ebay/).
+[Google Shopping](/channels/google-shopping/) and [Etsy](/channels/etsy/) are coming soon.
+
+## Bring your products in
+
+- **From a Shopify store:** on a connected Shopify store, click **Import products from Shopify**.
+  Products already in your catalog (same handle or SKU) are linked, not copied, and new ones are
+  created with their stock. Running the import again is safe. See
+  [Shopify: importing your catalog](/channels/shopify/#import-your-catalog).
+- **From a file:** under **Imports**, upload a Shopify product export (CSV). Products whose handle
+  is already in your catalog are skipped, and rows with problems are listed with their row number.
+  A two-column `sku,available` file updates stock.
+- **By hand:** **Products → New product**.
+
+## Finish the store's setup
+
+Some channels need details before anything can be published. Until they're done, the store's page
+shows **Finish setup to publish** with the list of what is missing, and products added to the
+store wait in [Needs details](/sellers/listing-states/).
+
+| Channel         | What the setup asks for                                                                                                                    |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Shopify         | Nothing                                                                                                                                    |
+| eBay            | A shipping, payment and return policy, and where items ship from, under **Listing defaults** ([details](/channels/ebay/#listing-defaults)) |
+| Google Shopping | The country and the product page address, under **Listing setup**                                                                          |
+| Etsy            | Who made the items, when, whether they're supplies, and a shipping and processing profile                                                  |
+
+## Reconnect a store
+
+A channel can stop accepting Crossmart's access, for example when you uninstall the app or the
+sign-in expires. The store then shows **Reconnect this store to keep it in sync**, and nothing
+reaches it until you click **Reconnect** and approve Crossmart again. Your products, listings and
+settings are kept.
+
+Shopify may also show **This store needs new permissions** when a feature, such as showing
+products in your Online Store or reading orders, needs an approval you haven't given yet. Click
+**Approve in Shopify** once; nothing else changes.
+
+## Disconnect a store
+
+**Disconnect** in the store's page stops all syncing to it and deletes the access Crossmart holds.
+Your products stay in your catalog.
+
+<Aside>
+  Your marketplace sign-in is stored encrypted, is never shown again, and is never written to logs.
+  Crossmart reads only what it needs from orders: what was sold, never who bought it.
+</Aside>
