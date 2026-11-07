@@ -10,6 +10,8 @@ const DIST_DIR = fileURLToPath(new URL('../dist/', import.meta.url));
 const SITE_ORIGIN = 'https://docs.crossmart.io';
 const HTML_EXTENSION = '.html';
 const INDEX_FILE = 'index.html';
+const MARKDOWN_EXTENSION = '.md';
+const MARKDOWN_INDEX_FILE = 'index.md';
 const LINK_PATTERN = /\s(?:href|src)="([^"]+)"/g;
 const ID_PATTERN = /\sid="([^"]+)"/g;
 const EXTERNAL_PATTERN = /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i;
@@ -26,7 +28,10 @@ function pagePath(file) {
   return path.endsWith(`/${INDEX_FILE}`) ? path.slice(0, -INDEX_FILE.length) : path;
 }
 
-/** Resolves a path the way nginx serves it (deploy/nginx.conf.template): file, folder, `.html`. */
+/**
+ * Resolves a path the way nginx serves it (deploy/nginx.conf.template): file, folder, `.html`,
+ * and a page's Markdown copy at `<page>.md`.
+ */
 function targetFile(pathname) {
   const decoded = decodeURIComponent(pathname);
   const withoutSlash = decoded.replace(/\/$/, '');
@@ -35,6 +40,10 @@ function targetFile(pathname) {
     join(DIST_DIR, decoded, INDEX_FILE),
     join(DIST_DIR, `${withoutSlash}${HTML_EXTENSION}`),
   ];
+  if (decoded.endsWith(MARKDOWN_EXTENSION)) {
+    const page = decoded.slice(0, -MARKDOWN_EXTENSION.length);
+    candidates.push(join(DIST_DIR, page, MARKDOWN_INDEX_FILE));
+  }
   return candidates.find((candidate) => existsSync(candidate) && statSync(candidate).isFile());
 }
 

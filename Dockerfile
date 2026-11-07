@@ -21,5 +21,7 @@ FROM nginx:1.27-alpine AS runtime
 # Railway sets PORT at runtime; the nginx image fills it into the template on start.
 ENV PORT=8080
 COPY deploy/nginx.conf.template /etc/nginx/templates/default.conf.template
+# The agent discovery snippet, generated from src/data by `pnpm build`.
+COPY --from=build /app/build/nginx/ /etc/nginx/snippets/
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 8080
