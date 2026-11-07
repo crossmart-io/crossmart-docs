@@ -1,0 +1,47 @@
+---
+/**
+ * Starlight's footer, plus a "Cookie settings" link and the cookie banner when analytics is
+ * configured. Every docs page renders the footer, so the banner reaches every page.
+ */
+import Default from '@astrojs/starlight/components/Footer.astro';
+import ConsentBanner from './consent/ConsentBanner.astro';
+import { GA_MEASUREMENT_ID } from '../data/analytics';
+import { CONSENT_COPY } from '../data/consent';
+---
+
+<Default>
+  <slot />
+</Default>
+{GA_MEASUREMENT_ID && (
+  <div class="cookie-settings not-content">
+    <button type="button" data-consent-open hidden>
+      {CONSENT_COPY.settings}
+    </button>
+  </div>
+)}
+<ConsentBanner />
+
+<style>
+  .cookie-settings {
+    display: flex;
+    justify-content: center;
+    margin-top: 1.5rem;
+  }
+  .cookie-settings button {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--sl-color-gray-3);
+    font: inherit;
+    font-size: var(--sl-text-xs);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+    cursor: pointer;
+  }
+  .cookie-settings button[hidden] {
+    display: none;
+  }
+  .cookie-settings button:hover {
+    color: var(--sl-color-white);
+  }
+</style>
