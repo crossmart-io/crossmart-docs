@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/crossmart-io/crossmart-docs/security/advisories/new
+    about: Report security issues privately, never in a public issue.
+  - name: Bug or feature request for the platform
+    url: https://github.com/crossmart-io/crossmart/issues/new/choose
+    about: Problems with Crossmart itself (the API, channels, SDKs) belong in the main repository.
+  - name: Questions
+    url: https://github.com/crossmart-io/crossmart/discussions
+    about: Ask and discuss in GitHub Discussions.

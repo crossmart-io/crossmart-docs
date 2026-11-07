@@ -258,6 +258,11 @@ except PlanLimitError as error:
         print(f"Your {error.plan} plan allows {error.limit} {error.feature}. Upgrade to add more.")
 ```
 
+<Aside type="note" title="Paid plans aren't live yet">
+  Crossmart Cloud billing hasn't launched, so there is nothing to upgrade to yet. `402` responses
+  and the plan fields are part of the API so your code is ready when paid plans arrive.
+</Aside>
+
 ## Retries and timeouts
 
 Idempotent requests (`GET`, `PUT`, `DELETE`) are retried twice by default after a 429, a 5xx or a
