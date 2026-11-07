@@ -32,6 +32,7 @@ working when roles change.
 | `members:manage`      | Invite, change roles and remove members                              |   ✓   |   ✓   |        |          |        |
 | `api-keys:manage`     | Create and revoke API keys                                           |   ✓   |   ✓   |        |          |        |
 | `workspace:manage`    | Change the workspace's settings                                      |   ✓   |   ✓   |        |          |        |
+| `webhooks:manage`     | Add, change and delete webhook endpoints, see their deliveries       |   ✓   |   ✓   |        |          |        |
 | `billing:view`        | See the organization's plan and usage (in any of its workspaces)     |   ✓   |   ✓   |        |          |        |
 | `workspace:delete`    | Delete the workspace and everything in it                            |   ✓   |       |        |          |        |
 

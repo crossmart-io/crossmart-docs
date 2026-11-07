@@ -110,11 +110,13 @@ export default defineConfig({
             { label: 'Overview', link: '/developers/' },
             { label: 'Quickstart', link: '/developers/quickstart/' },
             { label: 'Roles and permissions', link: '/developers/permissions/' },
+            { label: 'Webhooks', link: '/developers/webhooks/' },
             {
               label: 'SDKs',
               items: [
                 { label: 'TypeScript', link: '/developers/sdks/typescript/' },
                 { label: 'Python', link: '/developers/sdks/python/' },
+                { label: 'PHP', link: '/developers/sdks/php/' },
               ],
             },
             { label: 'MCP server', link: '/developers/mcp/' },

@@ -1,16 +1,19 @@
 ---
 title: n8n
-description: The Crossmart community nodes for n8n, to automate products, stock, listings and orders and trigger workflows on new orders, stock changes and failed listings.
+description: The Crossmart community nodes for n8n, to automate products, stock, listings and orders and start workflows from Crossmart webhooks on new orders, stock changes and failed listings.
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
 `n8n-nodes-crossmart` is the official [n8n](https://n8n.io) community node package for Crossmart.
-It has two nodes:
+It has three nodes:
 
 - **Crossmart:** products, stock, listings, orders and stores. It can also be a tool of n8n's AI
   Agent.
-- **Crossmart Trigger:** starts a workflow on a new order, a stock change or a failed listing.
+- **Crossmart Trigger:** starts a workflow the moment Crossmart sends an event (orders, stock,
+  listings, products), through a [webhook](/developers/webhooks/).
+- **Crossmart Polling Trigger:** the fallback when Crossmart can't reach n8n. It checks the API on
+  a schedule for new orders, stock changes and failed listings.
 
 The package is MIT-licensed.
 
@@ -32,28 +35,56 @@ the nodes use the same call to find the key's workspace, so there is no workspac
 Use a key for n8n alone, with the smallest role that works (see
 [Roles and permissions](/developers/permissions/)):
 
-| What the workflow does                                                      | Role     |
-| --------------------------------------------------------------------------- | -------- |
-| Reads products, stock, orders; runs triggers                                | `VIEWER` |
-| Creates and updates products, adjusts stock, publishes and retries listings | `EDITOR` |
-| Syncs stores                                                                | `ADMIN`  |
+| What the workflow does                                                      | Role                                             |
+| --------------------------------------------------------------------------- | ------------------------------------------------ |
+| Reads products, stock, orders; runs the **Crossmart Polling Trigger**       | `VIEWER`                                         |
+| Creates and updates products, adjusts stock, publishes and retries listings | `EDITOR`                                         |
+| Syncs stores                                                                | `ADMIN`                                          |
+| Runs the **Crossmart Trigger** (creates and deletes its webhook endpoint)   | `ADMIN`, or a custom role with `webhooks:manage` |
 
 ## Examples
 
 - **Restock from a purchase order:** a Google Sheets trigger → **Inventory → Get by SKU** →
   **Inventory → Adjust Stock** (mode _Add or Remove_, reason _Received_, note = the PO number).
 - **Alert on failed listings:** **Crossmart Trigger** (_Listing Failed_) → Slack, with
-  `{{$json.storeName}}`, `{{$json.productTitle}}` and `{{$json.lastError}}`; then fix the product
-  and run **Listing → Retry**.
-- **Orders to a spreadsheet:** **Crossmart Trigger** (_New Order_) → **Order → Get** for the
-  lines → Google Sheets.
+  `{{$json.data.listing.channel}}` and `{{$json.data.listing.lastError}}`; then fix the product
+  and run **Listing → Retry** with `{{$json.data.listing.productId}}` and
+  `{{$json.data.listing.connectionId}}`.
+- **Orders to a spreadsheet:** **Crossmart Trigger** (_Order Created_) → Google Sheets, one row
+  per order from `{{$json.data.order.name}}`, `{{$json.data.order.total}}` and
+  `{{$json.data.order.lines}}`.
 - **Low stock report:** Schedule → **Inventory → Get Many** (stock level _Low Stock_, Return All)
   → email.
 
-## How the trigger works
+## How the triggers work
 
-Crossmart has no outgoing webhooks yet, so the trigger polls the REST API on the interval set in
-n8n and remembers what it has seen:
+### Crossmart Trigger
+
+The trigger receives Crossmart's [webhooks](/developers/webhooks/), where the events, their
+payloads and the signature are documented.
+
+1. **When you activate the workflow**, the node adds a webhook endpoint in Crossmart that points
+   at the workflow's webhook URL, with the events you picked, and keeps its signing secret. If the
+   endpoint it made before is gone, turned off or out of date, it replaces it.
+2. **For each event**, the node checks the `Crossmart-Signature` header and refuses deliveries
+   that don't verify (`401`), so they never run the workflow. Events you didn't pick are
+   acknowledged and dropped; a test event always runs it. Delivery is at least once, so the node
+   remembers the last 100 event ids and drops repeats. The workflow gets one item per event: the
+   whole envelope, `{ id, type, createdAt, workspaceId, apiVersion, data }`.
+3. **When you deactivate the workflow**, the node deletes its endpoint.
+
+Activating fails with a clear message when the key lacks `webhooks:manage` (403), the plan's
+webhook endpoint limit is reached (402), or Crossmart refuses the URL (400: Crossmart Cloud only
+delivers to public `https` URLs). If n8n runs behind a proxy, set n8n's `WEBHOOK_URL` to its public
+URL.
+
+Workflows saved with version 0.1 of the package used a polling Crossmart Trigger. They keep polling
+after an upgrade; new Crossmart Trigger nodes use webhooks.
+
+### Crossmart Polling Trigger
+
+Use it when Crossmart can't reach n8n, such as n8n on a laptop or on a private network. It polls
+the REST API on the interval set in n8n and remembers what it has seen:
 
 | Event          | Emits                                                                  |
 | -------------- | ---------------------------------------------------------------------- |
@@ -67,10 +98,10 @@ another error, is emitted again. One check reads at most 10 pages.
 
 ## Limits
 
-- **Polling, not webhooks.** Events arrive on n8n's polling interval, not instantly.
-- **Stock Changed** emits an item's current stock, not each movement.
+- **The Polling Trigger** delivers events on n8n's polling interval, not instantly. Its **Stock
+  Changed** emits an item's current stock, not each movement (the webhook's
+  `inventory.stock_changed` carries `availableDelta` and `reason`), and its **New Order** can miss
+  an order a store reports late, with an older order date than the last 1,000 orders.
 - **Update** replaces the whole product, so the node reads it first and sends it back whole. Two
   workflows updating the same product at once can overwrite each other.
 - **Get by SKU** searches and keeps exact matches.
-- An order a store reports late, with an older order date than the last 1,000 orders, can be
-  missed by **New Order**.
