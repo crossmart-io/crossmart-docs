@@ -246,11 +246,6 @@ try {
 Other problems (no credentials, no workspace id) throw a `CrossmartError`, the base class of
 `CrossmartApiError`.
 
-<Aside type="note" title="Paid plans aren't live yet">
-  Crossmart Cloud billing hasn't launched, so there is nothing to upgrade to yet. `402` responses
-  and the plan fields are part of the API so your code is ready when paid plans arrive.
-</Aside>
-
 ## Retries
 
 Requests that are safe to repeat (`GET`, `PUT`, `DELETE`) are retried up to twice after a `429`,
