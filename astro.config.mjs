@@ -4,7 +4,7 @@ import { defineConfig } from 'astro/config';
 import starlightLinksValidator from 'starlight-links-validator';
 import starlightLlmsTxt from 'starlight-llms-txt';
 import starlightOpenAPI, { openAPISidebarGroups } from 'starlight-openapi';
-import { SITE_URL } from './src/data/site.ts';
+import { EXTERNAL_URLS, SITE_URL } from './src/data/site.ts';
 import { MARKDOWN_MEDIA_TYPE, markdownPathFor } from './src/lib/markdown-alternate.ts';
 const GITHUB_ORG_URL = 'https://github.com/crossmart-io';
 const DOCS_REPO_EDIT_URL = 'https://github.com/crossmart-io/crossmart-docs/edit/main/';
@@ -30,7 +30,10 @@ export default defineConfig({
         replacesTitle: true,
       },
       favicon: '/favicon.svg',
-      social: [{ icon: 'github', label: 'GitHub', href: GITHUB_ORG_URL }],
+      social: [
+        { icon: 'github', label: 'GitHub', href: GITHUB_ORG_URL },
+        { icon: 'discord', label: 'Discord', href: EXTERNAL_URLS.discord },
+      ],
       editLink: { baseUrl: DOCS_REPO_EDIT_URL },
       customCss: ['./src/styles/theme.css'],
       // Adds the Markdown alternate link to every page head.
@@ -55,6 +58,13 @@ export default defineConfig({
           description:
             'Crossmart is the open-source multichannel platform for sellers and their AI agents. It keeps one catalog and one stock ledger and publishes them to every store a seller connects.',
           details: LLMS_MARKDOWN_DETAILS,
+          optionalLinks: [
+            {
+              label: 'Discord',
+              url: EXTERNAL_URLS.discord,
+              description: 'the Crossmart community, for questions and help',
+            },
+          ],
         }),
       ],
       sidebar: [

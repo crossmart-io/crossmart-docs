@@ -14,6 +14,8 @@ export const EXTERNAL_URLS = {
   apiCatalog: `${MARKETING_SITE_URL}/.well-known/api-catalog`,
   /** The OpenAPI document for the REST API. */
   openApiSpec: 'https://api.crossmart.io/api/docs-json',
+  /** The Crossmart community on Discord. */
+  discord: 'https://discord.gg/dWPQjnzWhf',
 } as const;
 
 export const DOCS_PAGES = {
