@@ -54,10 +54,36 @@ pnpm openapi:sync                                                      # from ap
 CROSSMART_OPENAPI_URL=http://localhost:3000/api/docs-json pnpm openapi:sync   # from a local API
 ```
 
+## Configuration
+
+Build-time variables, read by Astro when the site is built (see `.env.example`). They are public:
+their values end up in the static pages.
+
+| Variable                   | What                                                                                                                             |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `PUBLIC_GA_MEASUREMENT_ID` | Google Analytics 4 Measurement ID (`G-XXXXXXXXXX`). Unset or empty: no analytics script, no cookie banner, no "Cookie settings". |
+
+### Analytics and consent
+
+The docs share crossmart.io's analytics setup and can use the same GA4 property. GA4 runs behind
+Google Consent Mode v2 in its basic form: gtag.js loads only after the visitor chooses "Accept"
+in the cookie banner, so no request reaches Google before consent. "Accept" grants
+`analytics_storage` only; ad storage stays denied. The choice is kept in localStorage and
+re-applied on every page. "Cookie settings" under each page reopens the banner, and
+withdrawing consent deletes the `_ga` cookies. The banner links to the
+[privacy policy](https://crossmart.io/privacy/).
+
+- Config and event names: `src/data/analytics.ts`. Banner copy: `src/data/consent.ts`.
+- The banner and the link come from a `Footer` override (`src/components/Footer.astro`); the
+  logic is in `src/scripts/analytics/`.
+- Events: `sign_up_click` (links to the app) and `github_click`, with the link's text.
+
 ## Deploy
 
 The site is static. The `Dockerfile` builds it and serves `dist/` with nginx on `$PORT`
-(`deploy/nginx.conf.template`), the same way as the marketing site.
+(`deploy/nginx.conf.template`), the same way as the marketing site. On Railway, set
+`PUBLIC_GA_MEASUREMENT_ID` on the docs service; the `Dockerfile` takes it as a build argument,
+so a change needs a redeploy.
 
 ## Contributing
 

@@ -29,6 +29,8 @@ export default defineConfig({
       social: [{ icon: 'github', label: 'GitHub', href: GITHUB_ORG_URL }],
       editLink: { baseUrl: DOCS_REPO_EDIT_URL },
       customCss: ['./src/styles/theme.css'],
+      // Adds "Cookie settings" and the cookie banner (only when PUBLIC_GA_MEASUREMENT_ID is set).
+      components: { Footer: './src/components/Footer.astro' },
       plugins: [
         starlightOpenAPI([
           {
