@@ -1,8 +1,61 @@
+# Markdown for agents: every page has a Markdown copy (`index.md`, written by
+# scripts/build-markdown.ts). It is served for `Accept: text/markdown` at the page URL, and at
+# `<page>.md` for anyone. The snippet comes from scripts/build-nginx-snippets.ts.
+include /etc/nginx/snippets/agent-discovery.http.conf;
+
+map $http_accept $markdown_requested {
+  default 0;
+  "~*text/markdown" 1;
+}
+
+# Pages have no dot in their path (`/sellers/stock/`); files do (`/llms.txt`).
+# `$page_html_file` and `$page_markdown_file` are the files on disk, `$page_markdown_path` the
+# public `.md` URL.
+map $page_uri $page_html_file {
+  default "";
+  "~^(?<page_dir>[^.]*?)/$" "$page_dir/index.html";
+}
+map $page_uri $page_markdown_file {
+  default "";
+  "~^(?<page_dir>[^.]*?)/*$" "$page_dir/index.md";
+}
+map $page_uri $page_markdown_path {
+  default "";
+  "/" "/index.md";
+  "~^(?<page_name>[^.]*?)/*$" "$page_name.md";
+}
+map $markdown_requested $markdown_candidate {
+  default "";
+  1 $page_markdown_file;
+}
+
+# A page URL serves HTML or Markdown, so it varies on Accept. Cloudflare ignores `Vary: Accept`
+# when caching, so page responses are also `private`: no shared cache may store either one.
+map $page_markdown_file $page_vary {
+  "" "";
+  default "Accept";
+}
+map $page_markdown_file $page_cache_control {
+  "" "no-cache";
+  default "private, no-cache";
+}
+
 server {
   listen ${PORT};
   root /usr/share/nginx/html;
   index index.html;
   absolute_redirect off;
+
+  # A `types` block here replaces the inherited list, so include it first.
+  include /etc/nginx/mime.types;
+  types {
+    text/markdown md;
+  }
+  charset utf-8;
+  charset_types text/markdown;
+
+  # The request path before try_files rewrites it to a file.
+  set $page_uri $uri;
 
   # Hashed build assets never change, so cache them for a year.
   location /_astro/ {
@@ -10,9 +63,17 @@ server {
     try_files $uri =404;
   }
 
+  # `/sellers/stock.md` and `/index.md`: the Markdown copy, one representation, safe to cache.
+  location ~ ^(?<markdown_page>/.*?)\.md$ {
+    add_header Cache-Control "no-cache";
+    try_files $uri $markdown_page/index.md =404;
+  }
+
   # Pages are built as folders (/privacy/index.html); revalidate them on every visit.
   location / {
-    add_header Cache-Control "no-cache";
-    try_files $uri $uri/ $uri.html =404;
+    add_header Cache-Control $page_cache_control;
+    add_header Vary $page_vary;
+    add_header Link $agent_discovery_links;
+    try_files $markdown_candidate $uri $page_html_file $uri/ $uri.html =404;
   }
 }

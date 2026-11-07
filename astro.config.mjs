@@ -4,14 +4,18 @@ import { defineConfig } from 'astro/config';
 import starlightLinksValidator from 'starlight-links-validator';
 import starlightLlmsTxt from 'starlight-llms-txt';
 import starlightOpenAPI, { openAPISidebarGroups } from 'starlight-openapi';
-
-const SITE_URL = 'https://docs.crossmart.io';
+import { SITE_URL } from './src/data/site.ts';
+import { MARKDOWN_MEDIA_TYPE, markdownPathFor } from './src/lib/markdown-alternate.ts';
 const GITHUB_ORG_URL = 'https://github.com/crossmart-io';
 const DOCS_REPO_EDIT_URL = 'https://github.com/crossmart-io/crossmart-docs/edit/main/';
 
 /** The API reference is generated from a snapshot of the live spec (`pnpm openapi:sync`). */
 const API_REFERENCE_BASE = 'developers/api';
 const OPENAPI_SPEC_FILE = './openapi/crossmart.json';
+
+/** Added to `/llms.txt`: how agents get any page as Markdown (see scripts/build-markdown.ts). */
+const MARKDOWN_EXAMPLE_PAGE = '/sellers/stock/';
+const LLMS_MARKDOWN_DETAILS = `Any page on this site is available as Markdown: request it with \`Accept: ${MARKDOWN_MEDIA_TYPE}\`, or add \`.md\` to its URL (${SITE_URL}${markdownPathFor(MARKDOWN_EXAMPLE_PAGE)}; the home page is ${SITE_URL}${markdownPathFor('/')}).`;
 
 export default defineConfig({
   site: SITE_URL,
@@ -29,6 +33,8 @@ export default defineConfig({
       social: [{ icon: 'github', label: 'GitHub', href: GITHUB_ORG_URL }],
       editLink: { baseUrl: DOCS_REPO_EDIT_URL },
       customCss: ['./src/styles/theme.css'],
+      // Adds the Markdown alternate link to every page head.
+      routeMiddleware: './src/route-middleware.ts',
       // Adds "Cookie settings" and the cookie banner (only when PUBLIC_GA_MEASUREMENT_ID is set).
       components: { Footer: './src/components/Footer.astro' },
       plugins: [
@@ -48,6 +54,7 @@ export default defineConfig({
           projectName: 'Crossmart',
           description:
             'Crossmart is the open-source multichannel platform for sellers and their AI agents. It keeps one catalog and one stock ledger and publishes them to every store a seller connects.',
+          details: LLMS_MARKDOWN_DETAILS,
         }),
       ],
       sidebar: [
