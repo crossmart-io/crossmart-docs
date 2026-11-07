@@ -161,6 +161,11 @@ A `400` lists every problem:
 A `402` has `code` set to `plan_limit_reached` or `plan_feature_not_included`, plus the `feature`,
 the `plan`, its `limit` and current `usage`, so you can tell the user what to upgrade.
 
+<Aside type="note" title="Paid plans aren't live yet">
+  Crossmart Cloud billing hasn't launched, so there is nothing to upgrade to yet. `402` responses
+  and the plan fields are part of the API so your code is ready when paid plans arrive.
+</Aside>
+
 ## Pagination
 
 List endpoints return one page at a time:

@@ -1,0 +1,26 @@
+name: Documentation issue
+description: Something in the docs is wrong, unclear, outdated or missing
+labels: [documentation]
+body:
+  - type: input
+    id: page
+    attributes:
+      label: Page
+      description: The URL of the page, or "new page" if it doesn't exist yet.
+      placeholder: https://docs.crossmart.io/sellers/pricing/
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind of issue
+      options: [Wrong or outdated, Unclear, Missing, Broken link or layout, Other]
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What's the problem?
+      description: What does the page say, and what should it say instead?
+    validations:
+      required: true

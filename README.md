@@ -59,6 +59,24 @@ CROSSMART_OPENAPI_URL=http://localhost:3000/api/docs-json pnpm openapi:sync   # 
 The site is static. The `Dockerfile` builds it and serves `dist/` with nginx on `$PORT`
 (`deploy/nginx.conf.template`), the same way as the marketing site.
 
+## Contributing
+
+Corrections and new guides are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for how to add a
+page and run the checks. Changes to the platform itself belong in
+[crossmart-io/crossmart](https://github.com/crossmart-io/crossmart). Report security issues as
+described in [SECURITY.md](SECURITY.md).
+
 ## License
 
-The documentation is licensed under [CC BY 4.0](LICENSE).
+Copyright (c) 2026 YIOT LLC. This repository uses two licenses:
+
+| What                                                                                  | License                      |
+| ------------------------------------------------------------------------------------- | ---------------------------- |
+| Documentation content: everything under `src/content/`                                | [CC BY 4.0](LICENSE-CONTENT) |
+| Site code: configuration, components, scripts, styles, `deploy/` and the `Dockerfile` | [MIT](LICENSE)               |
+
+You may reuse and adapt the pages with attribution to Crossmart, and reuse the site code under the
+MIT terms. `openapi/crossmart.json` is a snapshot generated from
+[crossmart-io/crossmart](https://github.com/crossmart-io/crossmart) and follows that repository's
+license. "Crossmart" and the Crossmart logo are trademarks of YIOT LLC and are not covered by
+either license. Other product names and logos belong to their owners.
