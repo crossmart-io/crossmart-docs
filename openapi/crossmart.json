@@ -1108,6 +1108,7 @@
     },
     "/api/v1/workspaces/{workspaceId}/products": {
       "get": {
+        "description": "Each row’s `stores` badges carry `displayState`, `displayReason` and `displayRequirement`, computed by the same rule as the store’s own pages.",
         "operationId": "ProductsController_list_v1",
         "parameters": [
           {
@@ -2739,9 +2740,99 @@
         ]
       }
     },
+    "/api/v1/workspaces/{workspaceId}/channel-connections/{connectionId}/etsy/listing-setup": {
+      "put": {
+        "description": "Who made the items, when, whether they are supplies, and the shop’s shipping and processing profiles every listing uses. Etsy requires all of them for physical listings.",
+        "operationId": "EtsyShopController_saveListingSetup_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "connectionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEtsyListingSetupDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChannelConnectionDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Set an Etsy connection’s listing setup",
+        "tags": [
+          "Channels"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspaceId}/channel-connections/{connectionId}/etsy/shop/refresh": {
+      "post": {
+        "description": "After the merchant creates or edits shipping or processing profiles on Etsy. The listing setup is kept.",
+        "operationId": "EtsyShopController_refreshShop_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "connectionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChannelConnectionDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Read an Etsy shop and its profiles again",
+        "tags": [
+          "Channels"
+        ]
+      }
+    },
     "/api/v1/workspaces/{workspaceId}/channel-connections/{connectionId}/products": {
       "get": {
-        "description": "Products the store should have or still has: listed, pending (being published), failed or removing (being delisted). Pass `state=excluded` for the catalog products it does not have. Counts per state follow `search`, so they can label filter tabs.",
+        "description": "Products the store should have or still has: listed, pending (being published), failed or removing (being delisted). Pass `state=excluded` for the catalog products it does not have. `displayState` narrows them to the state a merchant reads (`needs_details`, `ready`, …). Counts per state follow `search`, so they can label filter tabs.",
         "operationId": "ChannelProductsController_listProducts_v1",
         "parameters": [
           {
@@ -2766,6 +2857,15 @@
             "in": "query",
             "schema": {
               "$ref": "#/components/schemas/ChannelProductState"
+            }
+          },
+          {
+            "name": "displayState",
+            "required": false,
+            "in": "query",
+            "description": "Only products showing this display state. Without `state` it looks at every catalog product, so `draft` and `removed` find those not in the store.",
+            "schema": {
+              "$ref": "#/components/schemas/ListingDisplayState"
             }
           },
           {
@@ -3084,7 +3184,7 @@
     },
     "/api/v1/workspaces/{workspaceId}/channel-connections/{connectionId}/sync": {
       "post": {
-        "description": "Queues every selected product to be published (or updated when the channel has it) and every listing that is no longer selected to be delisted. Jobs run in the background; follow them in the listings. Refused (402) before anything is queued when the plan has no room for the active listings it would add.",
+        "description": "Queues every selected product to be published (or updated when the channel has it) and every listing that is no longer selected to be delisted. Jobs run in the background. Each listing it queues is marked (`syncRequestedAt`, `displayState: publishing`) until its job finishes; follow them with `GET …/sync`. Refused (402) before anything is queued when the plan has no room for the active listings it would add.",
         "operationId": "ChannelSyncController_requestSync_v1",
         "parameters": [
           {
@@ -3127,6 +3227,44 @@
           }
         },
         "summary": "Publish the selected products and sync the connection",
+        "tags": [
+          "Listings"
+        ]
+      },
+      "get": {
+        "description": "Counts the listings a sync or retry queued whose job has not finished yet, and those in error. Poll it after `POST …/sync`: the sync is done when `pending` is 0.",
+        "operationId": "ChannelSyncController_syncProgress_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "connectionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncProgressDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "How far the connection’s sync has come",
         "tags": [
           "Listings"
         ]
@@ -3464,7 +3602,7 @@
     },
     "/api/v1/workspaces/{workspaceId}/products/{productId}/channels/{connectionId}/retry": {
       "post": {
-        "description": "Re-queues this product’s publish (or update) to this store only, unlike `POST …/sync`, which resyncs the whole store. A failed or delisted listing becomes pending at once, so the answer shows `displayState: publishing`; the job runs in the background. Refused (409) when the store is not connected (it needs re-auth or was disconnected) or does not select the product, and (402) when the plan has no room for another active listing.",
+        "description": "Re-queues this product’s publish (or update) to this store only, unlike `POST …/sync`, which resyncs the whole store. A failed or delisted listing becomes pending at once, so the answer shows `displayState: publishing`; the job runs in the background. Refused (409) when the store is not connected (`code: store_not_connected`: it needs re-auth or was disconnected) or does not select the product (`code: product_not_in_store`), and (402) when the plan has no room for another active listing.",
         "operationId": "ProductChannelsController_retry_v1",
         "parameters": [
           {
@@ -3520,7 +3658,14 @@
             "description": "The product or the store is not in the workspace"
           },
           "409": {
-            "description": "The store is not connected, or the product is not selected for it"
+            "description": "The store is not connected (`store_not_connected`), or the product is not selected for it (`product_not_in_store`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingRetryErrorDto"
+                }
+              }
+            }
           }
         },
         "summary": "Publish the product to one store again",
@@ -3589,6 +3734,65 @@
           "Listings"
         ]
       },
+      "patch": {
+        "description": "Absent fields keep their override; null reverts a field to the product’s value. Each `variantPrices` entry replaces that variant’s prices only, and both prices null revert the variant to the pricing rule. When the channel already lists the product, an update is queued.",
+        "operationId": "ProductChannelsController_patchOverride_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "connectionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ListingOverridePatchDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductChannelDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Change some of the product’s overrides on one channel",
+        "tags": [
+          "Listings"
+        ]
+      },
       "delete": {
         "operationId": "ProductChannelsController_clearOverride_v1",
         "parameters": [
@@ -3633,6 +3837,60 @@
           }
         },
         "summary": "Remove the product’s overrides on one channel",
+        "tags": [
+          "Listings"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspaceId}/products/{productId}/channels/{connectionId}/listing": {
+      "get": {
+        "description": "Every field (title, description, tags, images, visibility, and each variant’s price and compare-at price) with the product’s value, the store’s override (null when it follows the product) and the value the store gets, plus the stock limits, category, a summary of the item specifics and the display state. Revert one field with `PATCH …/override`.",
+        "operationId": "ListingEditorController_get_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "connectionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingEditorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The product or the store is not in the workspace"
+          }
+        },
+        "summary": "The product’s listing on one store, for the listing editor",
         "tags": [
           "Listings"
         ]
@@ -4101,6 +4359,38 @@
         ]
       }
     },
+    "/api/v1/workspaces/{workspaceId}/analytics/listings": {
+      "get": {
+        "description": "Counts follow the same rule as each store’s product list. Each failed listing carries `displayState`, `displayReason` and `displayRequirement`, so a client can link to the fix.",
+        "operationId": "ListingHealthReportController_get_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingHealthReportDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Each store’s products by display state, and the latest failed listings, as of now",
+        "tags": [
+          "Analytics"
+        ]
+      }
+    },
     "/api/v1/workspaces/{workspaceId}/suggestions": {
       "get": {
         "description": "Filter by `PENDING` for the inbox.",
@@ -4560,6 +4850,696 @@
           "AI"
         ]
       }
+    },
+    "/api/v1/oauth/client": {
+      "get": {
+        "description": "Its name, and what of it Crossmart could verify: the host of a Client ID Metadata Document, or nothing for an agent that registered itself. Signed-in users only.",
+        "operationId": "AgentAuthorizationController_findClient_v1",
+        "parameters": [
+          {
+            "name": "clientId",
+            "required": true,
+            "in": "query",
+            "description": "The `client_id` of the authorization request",
+            "schema": {
+              "maxLength": 2048,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentClientDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such agent, or it is disabled"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "The agent asking for access",
+        "tags": [
+          "Agents"
+        ]
+      }
+    },
+    "/api/v1/oauth/workspace": {
+      "post": {
+        "description": "Called by the web app before it continues the OAuth flow. The agent will only ever act in this workspace, within your role there.",
+        "operationId": "AgentAuthorizationController_pickWorkspace_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PickAgentWorkspaceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Pick the workspace for the agent being authorized",
+        "tags": [
+          "Agents"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspaceId}/agent-connections": {
+      "get": {
+        "description": "Your own connections, or every member’s if you may manage API keys. Signed-in users only.",
+        "operationId": "AgentConnectionsController_list_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AgentConnectionDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "AI agents connected to the workspace",
+        "tags": [
+          "Agents"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspaceId}/agent-connections/{connectionId}": {
+      "delete": {
+        "description": "Revokes its tokens at once. The agent must be authorized again to come back.",
+        "operationId": "AgentConnectionsController_revoke_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "connectionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Disconnect an agent",
+        "tags": [
+          "Agents"
+        ]
+      }
+    },
+    "/api/v1/ask": {
+      "post": {
+        "description": "Answers from Crossmart’s public documentation and plan lineup only, citing the pages it used. When they do not answer the question, `outcome` is `unknown` and the answer points to the support address. It never sees or changes any account or workspace data. No credentials are needed: anonymous callers may ask 5 questions a minute and 50 a day per IP address; with an API key, session or agent token, 20 a minute and 500 a day. Answers 429 past those, and 503 when AI is not configured or the platform’s daily question budget is spent.",
+        "operationId": "AskController_ask_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AskQuestionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AskAnswerDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many questions from you. Wait a little and try again, or browse https://docs.crossmart.io."
+          },
+          "503": {
+            "description": "AI is not configured, Ask is turned off, or today’s questions are spent"
+          }
+        },
+        "security": [
+          {},
+          {
+            "bearer": []
+          },
+          {
+            "cookie": []
+          },
+          {
+            "api_key": []
+          }
+        ],
+        "summary": "Ask a question about Crossmart",
+        "tags": [
+          "Ask Crossmart"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspaceId}/webhook-endpoints": {
+      "get": {
+        "operationId": "WebhookEndpointsController_list_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WebhookEndpointDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Webhook endpoints of a workspace, oldest first",
+        "tags": [
+          "Webhooks"
+        ]
+      },
+      "post": {
+        "description": "Events are POSTed to the URL as JSON, signed in the Crossmart-Signature header.",
+        "operationId": "WebhookEndpointsController_create_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWebhookEndpointDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookEndpointWithSecretDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The URL is not https (in production), or not a public address"
+          },
+          "402": {
+            "description": "The organization’s plan does not allow this (`ENTITLEMENTS_ENFORCED` is on). `code` and `feature` say why; upgrading the plan resolves it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanLimitErrorDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The server has no CREDENTIALS_MASTER_KEY to encrypt secrets with"
+          }
+        },
+        "summary": "Add a webhook endpoint. Its signing secret is returned once.",
+        "tags": [
+          "Webhooks"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspaceId}/webhook-endpoints/{endpointId}": {
+      "get": {
+        "operationId": "WebhookEndpointsController_get_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endpointId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookEndpointDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "One webhook endpoint",
+        "tags": [
+          "Webhooks"
+        ]
+      },
+      "patch": {
+        "description": "Turning an endpoint off fails what it still had to receive; turning it on clears its failure count. Events from while it was off are not sent.",
+        "operationId": "WebhookEndpointsController_update_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endpointId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWebhookEndpointDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookEndpointDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The URL is not https (in production), or not a public address"
+          }
+        },
+        "summary": "Change a webhook endpoint, or turn it off or on",
+        "tags": [
+          "Webhooks"
+        ]
+      },
+      "delete": {
+        "operationId": "WebhookEndpointsController_delete_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endpointId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "summary": "Delete a webhook endpoint and its delivery log",
+        "tags": [
+          "Webhooks"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspaceId}/webhook-endpoints/{endpointId}/rotate-secret": {
+      "post": {
+        "description": "For 24 hours deliveries are signed with both the new and the old secret (two v1 signatures), so the receiver can switch without dropping events.",
+        "operationId": "WebhookEndpointsController_rotateSecret_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endpointId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookEndpointWithSecretDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The server has no CREDENTIALS_MASTER_KEY to encrypt secrets with"
+          }
+        },
+        "summary": "Give a webhook endpoint a new signing secret, returned once",
+        "tags": [
+          "Webhooks"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspaceId}/webhook-endpoints/{endpointId}/deliveries": {
+      "get": {
+        "description": "Deliveries are kept for 30 days.",
+        "operationId": "WebhookDeliveriesController_list_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endpointId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/WebhookDeliveryStatus"
+            }
+          },
+          {
+            "name": "eventType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/WebhookEventType"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "desc",
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/SortDirection"
+                }
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "`nextCursor` from the previous page",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "1-based page number, for tables with page numbers. It wins over `cursor`.",
+            "schema": {
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookDeliveryPageDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "The delivery log of a webhook endpoint, newest first",
+        "tags": [
+          "Webhooks"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspaceId}/webhook-endpoints/{endpointId}/deliveries/{deliveryId}": {
+      "get": {
+        "operationId": "WebhookDeliveriesController_get_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endpointId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "deliveryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookDeliveryDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "One delivery, with the JSON body it sends",
+        "tags": [
+          "Webhooks"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspaceId}/webhook-endpoints/{endpointId}/deliveries/{deliveryId}/redeliver": {
+      "post": {
+        "description": "A new delivery of the same event, with the same event id, sent right away.",
+        "operationId": "WebhookDeliveriesController_redeliver_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endpointId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "deliveryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookDeliveryDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Send a delivery’s event again",
+        "tags": [
+          "Webhooks"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspaceId}/webhook-endpoints/{endpointId}/test": {
+      "post": {
+        "description": "A `webhook.test` event, to this endpoint only and tried once. Its outcome shows in the delivery log within seconds.",
+        "operationId": "WebhookDeliveriesController_sendTest_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endpointId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookDeliveryDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Send a test event to a webhook endpoint",
+        "tags": [
+          "Webhooks"
+        ]
+      }
     }
   },
   "info": {
@@ -4590,6 +5570,12 @@
         "type": "apiKey",
         "in": "cookie",
         "name": "better-auth.session_token"
+      },
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http",
+        "description": "An AI agent’s OAuth access token, for workspace routes only. Agents get one by signing in through the MCP server (see docs/mcp.md)."
       }
     },
     "schemas": {
@@ -4630,6 +5616,7 @@
           "members:view",
           "members:manage",
           "api-keys:manage",
+          "webhooks:manage",
           "products:view",
           "products:edit",
           "inventory:view",
@@ -4812,6 +5799,7 @@
           "workspaces",
           "members",
           "api_keys",
+          "webhook_endpoints",
           "ai_credits",
           "autonomous_agents",
           "bring_your_own_key"
@@ -5369,12 +6357,17 @@
             "type": "number",
             "example": 1,
             "description": "The plan version the organization is on; later versions never change it"
+          },
+          "offered": {
+            "type": "boolean",
+            "description": "Whether new organizations can choose this plan. False for a legacy plan, which an organization already on it keeps"
           }
         },
         "required": [
           "code",
           "name",
-          "version"
+          "version",
+          "offered"
         ]
       },
       "SubscriptionStatus": {
@@ -5568,6 +6561,41 @@
           "RULE"
         ]
       },
+      "ListingDisplayState": {
+        "type": "string",
+        "enum": [
+          "draft",
+          "needs_details",
+          "ready",
+          "publishing",
+          "published",
+          "failed",
+          "removing",
+          "removed"
+        ],
+        "description": "The product on this store, in one state computed by the server: `draft` (not selected for the store), `needs_details` (selected, but the store setup or the product lacks something publishing needs), `ready` (publishable, not sent yet), `publishing` (queued or in flight, including an update of a published listing that a sync or retry queued), `published`, `failed`, `removing` (being taken off) or `removed`."
+      },
+      "PublishRequirement": {
+        "type": "string",
+        "enum": [
+          "reconnect",
+          "account_settings",
+          "shipping_policy",
+          "payment_policy",
+          "return_policy",
+          "ship_from_location",
+          "listing_setup",
+          "item_details",
+          "shipping_profile",
+          "processing_profile",
+          "images",
+          "active_product",
+          "category",
+          "item_specifics",
+          "option_names"
+        ],
+        "description": "For `needs_details`: the requirement to fix first, so a client can open the right place. Store-setup requirements (`reconnect`, `account_settings`, `shipping_policy`, `payment_policy`, `return_policy`, `ship_from_location`, `listing_setup`) come before the product’s (`images`, `active_product`, `option_names`), which the server checks before publishing; `category` and `item_specifics` are known once the channel refused a publish. Null for the other states."
+      },
       "ProductStoreBadgeDto": {
         "type": "object",
         "properties": {
@@ -5599,6 +6627,29 @@
                 "$ref": "#/components/schemas/ListingSource"
               }
             ]
+          },
+          "displayState": {
+            "description": "The product on this store, in one state computed by the server: `draft` (not selected for the store), `needs_details` (selected, but the store setup or the product lacks something publishing needs), `ready` (publishable, not sent yet), `publishing` (queued or in flight, including an update of a published listing that a sync or retry queued), `published`, `failed`, `removing` (being taken off) or `removed`.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ListingDisplayState"
+              }
+            ]
+          },
+          "displayReason": {
+            "type": "string",
+            "nullable": true,
+            "example": "Choose a shipping policy in this eBay connection’s listing defaults.",
+            "description": "For `needs_details` and `failed`: a short, merchant-readable reason (what to add, or the channel’s message). Never holds secrets. Null for the other states."
+          },
+          "displayRequirement": {
+            "nullable": true,
+            "description": "For `needs_details`: the requirement to fix first, so a client can open the right place. Store-setup requirements (`reconnect`, `account_settings`, `shipping_policy`, `payment_policy`, `return_policy`, `ship_from_location`, `listing_setup`) come before the product’s (`images`, `active_product`, `option_names`), which the server checks before publishing; `category` and `item_specifics` are known once the channel refused a publish. Null for the other states.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublishRequirement"
+              }
+            ]
           }
         },
         "required": [
@@ -5606,7 +6657,10 @@
           "channel",
           "storeName",
           "status",
-          "source"
+          "source",
+          "displayState",
+          "displayReason",
+          "displayRequirement"
         ]
       },
       "ProductSummaryDto": {
@@ -6892,6 +7946,13 @@
           "product_view_deleted",
           "api_key_created",
           "api_key_revoked",
+          "webhook_endpoint_created",
+          "webhook_endpoint_updated",
+          "webhook_endpoint_deleted",
+          "webhook_secret_rotated",
+          "webhook_endpoint_disabled",
+          "agent_disconnected",
+          "unused_agents_removed",
           "member_invited",
           "invitation_revoked",
           "member_joined",
@@ -6946,11 +8007,13 @@
           "product_view",
           "import_job",
           "api_key",
+          "agent_connection",
           "member",
           "invitation",
           "workspace",
           "custom_role",
-          "channel_connection"
+          "channel_connection",
+          "webhook_endpoint"
         ]
       },
       "ActivityActorType": {
@@ -6958,6 +8021,7 @@
         "enum": [
           "USER",
           "API_KEY",
+          "AGENT",
           "SYSTEM"
         ]
       },
@@ -6981,23 +8045,35 @@
             "format": "uuid",
             "nullable": true
           },
+          "agentClientId": {
+            "type": "string",
+            "nullable": true,
+            "description": "The OAuth client id of the connected agent, for agent actions"
+          },
           "name": {
             "type": "string",
             "nullable": true,
-            "description": "User or API key name; null for system actions and deleted users or keys"
+            "description": "User or API key name; for an agent, the user it acted for. Null for system actions and deleted users or keys"
           },
           "email": {
             "type": "string",
             "nullable": true,
-            "description": "Set for users only"
+            "description": "Set for users, and for the user an agent acted for"
+          },
+          "agentName": {
+            "type": "string",
+            "nullable": true,
+            "description": "The agent's name, such as \"Claude\", for agent actions"
           }
         },
         "required": [
           "type",
           "userId",
           "apiKeyId",
+          "agentClientId",
           "name",
-          "email"
+          "email",
+          "agentName"
         ]
       },
       "ActivitySubjectDto": {
@@ -7795,6 +8871,166 @@
           "readyToList"
         ]
       },
+      "EtsyProfileDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "6722757781"
+          },
+          "name": {
+            "type": "string",
+            "example": "Free US shipping"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "EtsyShopProfilesDto": {
+        "type": "object",
+        "properties": {
+          "shipping": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EtsyProfileDto"
+            }
+          },
+          "processing": {
+            "description": "Processing profiles: whether items are ready to ship or made to order, and how long they take",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EtsyProfileDto"
+            }
+          }
+        },
+        "required": [
+          "shipping",
+          "processing"
+        ]
+      },
+      "EtsyWhoMade": {
+        "type": "string",
+        "enum": [
+          "i_did",
+          "someone_else",
+          "collective"
+        ]
+      },
+      "EtsyWhenMade": {
+        "type": "string",
+        "enum": [
+          "made_to_order",
+          "2020_2026",
+          "2010_2019",
+          "2007_2009",
+          "before_2007",
+          "2000_2006",
+          "1990s",
+          "1980s",
+          "1970s",
+          "1960s",
+          "1950s",
+          "1940s",
+          "1930s",
+          "1920s",
+          "1910s",
+          "1900s",
+          "1800s",
+          "1700s",
+          "before_1700"
+        ]
+      },
+      "EtsyListingSetupDto": {
+        "type": "object",
+        "properties": {
+          "whoMade": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EtsyWhoMade"
+              }
+            ]
+          },
+          "whenMade": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EtsyWhenMade"
+              }
+            ]
+          },
+          "isSupply": {
+            "type": "boolean",
+            "description": "Whether the items are craft supplies rather than finished products"
+          },
+          "shippingProfileId": {
+            "type": "string",
+            "nullable": true,
+            "description": "The shipping profile listings use; null when the shop has none or several and none is chosen"
+          },
+          "processingProfileId": {
+            "type": "string",
+            "nullable": true,
+            "description": "The processing profile listings use"
+          }
+        },
+        "required": [
+          "whoMade",
+          "whenMade",
+          "isSupply",
+          "shippingProfileId",
+          "processingProfileId"
+        ]
+      },
+      "EtsySettingsDto": {
+        "type": "object",
+        "properties": {
+          "shopId": {
+            "type": "string",
+            "example": "87654321"
+          },
+          "shopName": {
+            "type": "string",
+            "example": "ClayAndKiln"
+          },
+          "currencyCode": {
+            "type": "string",
+            "example": "USD",
+            "description": "ISO 4217 code of the shop’s currency"
+          },
+          "shopUrl": {
+            "type": "string",
+            "nullable": true,
+            "example": "https://www.etsy.com/shop/ClayAndKiln"
+          },
+          "profiles": {
+            "$ref": "#/components/schemas/EtsyShopProfilesDto"
+          },
+          "listingSetup": {
+            "nullable": true,
+            "description": "Null until the merchant saves it; publishing needs it",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EtsyListingSetupDto"
+              }
+            ]
+          },
+          "readyToList": {
+            "type": "boolean",
+            "description": "Whether the listing setup is complete, so products can be listed"
+          }
+        },
+        "required": [
+          "shopId",
+          "shopName",
+          "currencyCode",
+          "shopUrl",
+          "profiles",
+          "listingSetup",
+          "readyToList"
+        ]
+      },
       "ProductSelectionFilterDto": {
         "type": "object",
         "properties": {
@@ -7943,24 +9179,6 @@
           "compareAt"
         ]
       },
-      "PublishRequirement": {
-        "type": "string",
-        "enum": [
-          "reconnect",
-          "account_settings",
-          "shipping_policy",
-          "payment_policy",
-          "return_policy",
-          "ship_from_location",
-          "listing_setup",
-          "images",
-          "active_product",
-          "category",
-          "item_specifics",
-          "option_names"
-        ],
-        "description": "What to finish before publishing, in order; empty when ready. `reconnect` alone when the store needs to be connected again. eBay: `shipping_policy`, `payment_policy`, `return_policy`, `ship_from_location`. Google: `listing_setup`. `account_settings` when the account was never read."
-      },
       "PublishReadinessDto": {
         "type": "object",
         "properties": {
@@ -7974,7 +9192,7 @@
               "shipping_policy",
               "ship_from_location"
             ],
-            "description": "What to finish before publishing, in order; empty when ready. `reconnect` alone when the store needs to be connected again. eBay: `shipping_policy`, `payment_policy`, `return_policy`, `ship_from_location`. Google: `listing_setup`. `account_settings` when the account was never read.",
+            "description": "What to finish before publishing, in order; empty when ready. `reconnect` alone when the store needs to be connected again. eBay: `shipping_policy`, `payment_policy`, `return_policy`, `ship_from_location`. Google: `listing_setup`. Etsy: `item_details`, `shipping_profile`, `processing_profile`. `account_settings` when the account was never read.",
             "items": {
               "$ref": "#/components/schemas/PublishRequirement"
             }
@@ -8063,6 +9281,16 @@
               }
             ]
           },
+          "etsy": {
+            "nullable": true,
+            "description": "The Etsy shop, its profiles and its listing setup, for Etsy connections",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EtsySettingsDto"
+              }
+            ]
+          },
           "productSelection": {
             "nullable": true,
             "description": "Which products the connection lists; null lists every product",
@@ -8130,6 +9358,7 @@
           "shopify",
           "ebay",
           "googleMerchant",
+          "etsy",
           "productSelection",
           "pricing",
           "connectedAt",
@@ -8155,7 +9384,7 @@
             "type": "string",
             "maxLength": 255,
             "example": "demo-store.myshopify.com",
-            "description": "The account to connect. For Shopify, the store’s myshopify.com domain or handle. For eBay, the marketplace id, such as `EBAY_US`."
+            "description": "The account to connect. For Shopify, the store’s myshopify.com domain or handle. For eBay, the marketplace id, such as `EBAY_US`. For Etsy, the shop name (the merchant must sign in to that shop)."
           }
         },
         "required": [
@@ -8173,7 +9402,7 @@
           "accountHandle": {
             "type": "string",
             "example": "demo-store.myshopify.com",
-            "description": "The account handle, normalized: a myshopify.com domain, or an eBay marketplace id"
+            "description": "The account handle, normalized: a myshopify.com domain, an eBay marketplace id, or a lower-cased Etsy shop name"
           },
           "externalAccountId": {
             "type": "string",
@@ -8253,6 +9482,50 @@
           "productUrlTemplate"
         ]
       },
+      "UpdateEtsyListingSetupDto": {
+        "type": "object",
+        "properties": {
+          "whoMade": {
+            "description": "Who made the items",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EtsyWhoMade"
+              }
+            ]
+          },
+          "whenMade": {
+            "description": "When the items were made: `made_to_order`, or an era for vintage items",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EtsyWhenMade"
+              }
+            ]
+          },
+          "isSupply": {
+            "type": "boolean",
+            "description": "Whether the items are craft supplies rather than finished products"
+          },
+          "shippingProfileId": {
+            "type": "string",
+            "nullable": true,
+            "example": "6722757781",
+            "description": "One of the shop’s shipping profiles; null follows the shop’s only one"
+          },
+          "processingProfileId": {
+            "type": "string",
+            "nullable": true,
+            "example": "18201076875",
+            "description": "One of the shop’s processing profiles; null follows the shop’s only one"
+          }
+        },
+        "required": [
+          "whoMade",
+          "whenMade",
+          "isSupply",
+          "shippingProfileId",
+          "processingProfileId"
+        ]
+      },
       "ChannelProductState": {
         "type": "string",
         "enum": [
@@ -8270,20 +9543,6 @@
           "title",
           "updatedAt"
         ]
-      },
-      "ListingDisplayState": {
-        "type": "string",
-        "enum": [
-          "draft",
-          "needs_details",
-          "ready",
-          "publishing",
-          "published",
-          "failed",
-          "removing",
-          "removed"
-        ],
-        "description": "The product on this store, in one state computed by the server: `draft` (not selected for the store), `needs_details` (selected, but the store setup or the product lacks something publishing needs), `ready` (publishable, not sent yet), `publishing` (queued or in flight), `published`, `failed`, `removing` (being taken off) or `removed`."
       },
       "ChannelCategoryDto": {
         "type": "object",
@@ -8354,6 +9613,12 @@
             "type": "string",
             "nullable": true
           },
+          "syncRequestedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "When a sync or retry queued its publish, update or delist; null once that job finished or gave up. While set, a selected listing shows `displayState: publishing`."
+          },
           "category": {
             "nullable": true,
             "description": "The channel category it is listed in, on channels with categories (eBay)",
@@ -8374,6 +9639,7 @@
           "lastError",
           "missingRequirement",
           "lastSyncedAt",
+          "syncRequestedAt",
           "category"
         ]
       },
@@ -8391,7 +9657,7 @@
             ]
           },
           "displayState": {
-            "description": "The product on this store, in one state computed by the server: `draft` (not selected for the store), `needs_details` (selected, but the store setup or the product lacks something publishing needs), `ready` (publishable, not sent yet), `publishing` (queued or in flight), `published`, `failed`, `removing` (being taken off) or `removed`.",
+            "description": "The product on this store, in one state computed by the server: `draft` (not selected for the store), `needs_details` (selected, but the store setup or the product lacks something publishing needs), `ready` (publishable, not sent yet), `publishing` (queued or in flight, including an update of a published listing that a sync or retry queued), `published`, `failed`, `removing` (being taken off) or `removed`.",
             "allOf": [
               {
                 "$ref": "#/components/schemas/ListingDisplayState"
@@ -8403,6 +9669,15 @@
             "nullable": true,
             "example": "Choose a shipping policy in this eBay connection’s listing defaults.",
             "description": "For `needs_details` and `failed`: a short, merchant-readable reason (what to add, or the channel’s message). Never holds secrets. Null for the other states."
+          },
+          "displayRequirement": {
+            "nullable": true,
+            "description": "For `needs_details`: the requirement to fix first, so a client can open the right place. Store-setup requirements (`reconnect`, `account_settings`, `shipping_policy`, `payment_policy`, `return_policy`, `ship_from_location`, `listing_setup`) come before the product’s (`images`, `active_product`, `option_names`), which the server checks before publishing; `category` and `item_specifics` are known once the channel refused a publish. Null for the other states.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublishRequirement"
+              }
+            ]
           },
           "listing": {
             "nullable": true,
@@ -8419,6 +9694,7 @@
           "state",
           "displayState",
           "displayReason",
+          "displayRequirement",
           "listing"
         ]
       },
@@ -8782,7 +10058,7 @@
         "properties": {
           "queued": {
             "type": "number",
-            "description": "Selected products queued to be published or updated"
+            "description": "Selected products queued to be published or updated. With `delisting`, the total a progress bar counts down from `GET …/sync`’s `pending`."
           },
           "delisting": {
             "type": "number",
@@ -8792,6 +10068,28 @@
         "required": [
           "queued",
           "delisting"
+        ]
+      },
+      "SyncProgressDto": {
+        "type": "object",
+        "properties": {
+          "pending": {
+            "type": "number",
+            "description": "Listings whose publish, update or delist a sync or retry queued and whose job has not finished yet (each shows `syncRequestedAt`, and `displayState: publishing` while selected)"
+          },
+          "failed": {
+            "type": "number",
+            "description": "The store’s listings in error now, whatever queued them"
+          },
+          "done": {
+            "type": "boolean",
+            "description": "True once nothing a sync or retry queued is still pending"
+          }
+        },
+        "required": [
+          "pending",
+          "failed",
+          "done"
         ]
       },
       "ChannelListingDto": {
@@ -8845,6 +10143,12 @@
             "type": "string",
             "nullable": true
           },
+          "syncRequestedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "When a sync or retry queued its publish, update or delist; null once that job finished or gave up. While set, a selected listing shows `displayState: publishing`."
+          },
           "category": {
             "nullable": true,
             "description": "The channel category it is listed in, on channels with categories (eBay)",
@@ -8870,7 +10174,7 @@
             "type": "number"
           },
           "displayState": {
-            "description": "The product on this store, in one state computed by the server: `draft` (not selected for the store), `needs_details` (selected, but the store setup or the product lacks something publishing needs), `ready` (publishable, not sent yet), `publishing` (queued or in flight), `published`, `failed`, `removing` (being taken off) or `removed`.",
+            "description": "The product on this store, in one state computed by the server: `draft` (not selected for the store), `needs_details` (selected, but the store setup or the product lacks something publishing needs), `ready` (publishable, not sent yet), `publishing` (queued or in flight, including an update of a published listing that a sync or retry queued), `published`, `failed`, `removing` (being taken off) or `removed`.",
             "allOf": [
               {
                 "$ref": "#/components/schemas/ListingDisplayState"
@@ -8882,6 +10186,15 @@
             "nullable": true,
             "example": "Choose a shipping policy in this eBay connection’s listing defaults.",
             "description": "For `needs_details` and `failed`: a short, merchant-readable reason (what to add, or the channel’s message). Never holds secrets. Null for the other states."
+          },
+          "displayRequirement": {
+            "nullable": true,
+            "description": "For `needs_details`: the requirement to fix first, so a client can open the right place. Store-setup requirements (`reconnect`, `account_settings`, `shipping_policy`, `payment_policy`, `return_policy`, `ship_from_location`, `listing_setup`) come before the product’s (`images`, `active_product`, `option_names`), which the server checks before publishing; `category` and `item_specifics` are known once the channel refused a publish. Null for the other states.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublishRequirement"
+              }
+            ]
           }
         },
         "required": [
@@ -8893,13 +10206,15 @@
           "lastError",
           "missingRequirement",
           "lastSyncedAt",
+          "syncRequestedAt",
           "category",
           "productId",
           "productTitle",
           "imageUrl",
           "variantCount",
           "displayState",
-          "displayReason"
+          "displayReason",
+          "displayRequirement"
         ]
       },
       "ChannelListingPageDto": {
@@ -9034,6 +10349,10 @@
             "type": "string",
             "nullable": true
           },
+          "vendor": {
+            "type": "string",
+            "nullable": true
+          },
           "tags": {
             "nullable": true,
             "type": "array",
@@ -9078,6 +10397,7 @@
         "required": [
           "title",
           "descriptionHtml",
+          "vendor",
           "tags",
           "mediaUrls",
           "visibility",
@@ -9101,6 +10421,11 @@
           "price": {
             "$ref": "#/components/schemas/ResolvedPriceDto"
           },
+          "rulePrice": {
+            "type": "string",
+            "example": "102.99",
+            "description": "In the store’s currency: what its pricing rule gives, before a fixed price on the listing. Equal to the effective price unless the price is overridden."
+          },
           "quantity": {
             "type": "number",
             "nullable": true,
@@ -9111,6 +10436,7 @@
           "variantId",
           "title",
           "price",
+          "rulePrice",
           "quantity"
         ]
       },
@@ -9125,7 +10451,7 @@
             "description": "Whether the connection’s product selection includes it"
           },
           "displayState": {
-            "description": "The product on this store, in one state computed by the server: `draft` (not selected for the store), `needs_details` (selected, but the store setup or the product lacks something publishing needs), `ready` (publishable, not sent yet), `publishing` (queued or in flight), `published`, `failed`, `removing` (being taken off) or `removed`.",
+            "description": "The product on this store, in one state computed by the server: `draft` (not selected for the store), `needs_details` (selected, but the store setup or the product lacks something publishing needs), `ready` (publishable, not sent yet), `publishing` (queued or in flight, including an update of a published listing that a sync or retry queued), `published`, `failed`, `removing` (being taken off) or `removed`.",
             "allOf": [
               {
                 "$ref": "#/components/schemas/ListingDisplayState"
@@ -9137,6 +10463,15 @@
             "nullable": true,
             "example": "Choose a shipping policy in this eBay connection’s listing defaults.",
             "description": "For `needs_details` and `failed`: a short, merchant-readable reason (what to add, or the channel’s message). Never holds secrets. Null for the other states."
+          },
+          "displayRequirement": {
+            "nullable": true,
+            "description": "For `needs_details`: the requirement to fix first, so a client can open the right place. Store-setup requirements (`reconnect`, `account_settings`, `shipping_policy`, `payment_policy`, `return_policy`, `ship_from_location`, `listing_setup`) come before the product’s (`images`, `active_product`, `option_names`), which the server checks before publishing; `category` and `item_specifics` are known once the channel refused a publish. Null for the other states.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublishRequirement"
+              }
+            ]
           },
           "listing": {
             "nullable": true,
@@ -9168,9 +10503,49 @@
           "selected",
           "displayState",
           "displayReason",
+          "displayRequirement",
           "listing",
           "override",
           "variants"
+        ]
+      },
+      "ListingRetryErrorCode": {
+        "type": "string",
+        "enum": [
+          "store_not_connected",
+          "product_not_in_store"
+        ],
+        "description": "`store_not_connected`: the store needs re-auth, was disconnected or is in error; reconnect it. `product_not_in_store`: the store does not select the product; add it."
+      },
+      "ListingRetryErrorDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 409
+          },
+          "error": {
+            "type": "string",
+            "example": "Conflict"
+          },
+          "code": {
+            "description": "`store_not_connected`: the store needs re-auth, was disconnected or is in error; reconnect it. `product_not_in_store`: the store does not select the product; add it.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ListingRetryErrorCode"
+              }
+            ]
+          },
+          "message": {
+            "type": "string",
+            "example": "Connect this store again before publishing to it"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "code",
+          "message"
         ]
       },
       "ListingOverrideDto": {
@@ -9184,6 +10559,12 @@
           "descriptionHtml": {
             "type": "string",
             "nullable": true
+          },
+          "vendor": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 255,
+            "description": "The brand this channel shows instead of the product’s vendor"
           },
           "tags": {
             "nullable": true,
@@ -9229,6 +10610,497 @@
             }
           }
         }
+      },
+      "ListingOverridePatchDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 255
+          },
+          "descriptionHtml": {
+            "type": "string",
+            "nullable": true
+          },
+          "vendor": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 255,
+            "description": "The brand this channel shows instead of the product’s vendor"
+          },
+          "tags": {
+            "nullable": true,
+            "description": "Replaces the product’s tags",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "mediaUrls": {
+            "nullable": true,
+            "description": "The product’s image URLs to show, in order",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "visibility": {
+            "nullable": true,
+            "description": "Show or hide on this channel, whatever the product’s status",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ListingVisibility"
+              }
+            ]
+          },
+          "inventoryBuffer": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 0,
+            "description": "Units held back"
+          },
+          "maxQuantity": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 0,
+            "description": "Most units shown"
+          },
+          "variantPrices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VariantPriceOverrideDto"
+            }
+          }
+        }
+      },
+      "InheritedTextDto": {
+        "type": "object",
+        "properties": {
+          "product": {
+            "type": "string",
+            "description": "The product’s value"
+          },
+          "override": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null when it follows the product"
+          },
+          "effective": {
+            "type": "string",
+            "description": "What the store gets"
+          },
+          "overridden": {
+            "type": "boolean",
+            "description": "Whether the store overrides it; reverting sets `override` to null"
+          }
+        },
+        "required": [
+          "product",
+          "override",
+          "effective",
+          "overridden"
+        ]
+      },
+      "InheritedOptionalTextDto": {
+        "type": "object",
+        "properties": {
+          "product": {
+            "type": "string",
+            "nullable": true,
+            "description": "The product’s value"
+          },
+          "override": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null when it follows the product"
+          },
+          "effective": {
+            "type": "string",
+            "nullable": true,
+            "description": "What the store gets"
+          },
+          "overridden": {
+            "type": "boolean",
+            "description": "Whether the store overrides it; reverting sets `override` to null"
+          }
+        },
+        "required": [
+          "product",
+          "override",
+          "effective",
+          "overridden"
+        ]
+      },
+      "InheritedTextListDto": {
+        "type": "object",
+        "properties": {
+          "product": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "override": {
+            "nullable": true,
+            "description": "Null when it follows the product",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "effective": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "overridden": {
+            "type": "boolean",
+            "description": "Whether the store overrides it; reverting sets `override` to null"
+          }
+        },
+        "required": [
+          "product",
+          "override",
+          "effective",
+          "overridden"
+        ]
+      },
+      "InheritedVisibilityDto": {
+        "type": "object",
+        "properties": {
+          "product": {
+            "description": "`VISIBLE` when the product is active, else `HIDDEN`",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ListingVisibility"
+              }
+            ]
+          },
+          "override": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ListingVisibility"
+              }
+            ]
+          },
+          "effective": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ListingVisibility"
+              }
+            ]
+          },
+          "overridden": {
+            "type": "boolean",
+            "description": "Whether the store overrides it; reverting sets `override` to null"
+          }
+        },
+        "required": [
+          "product",
+          "override",
+          "effective",
+          "overridden"
+        ]
+      },
+      "ListingStockLimitsDto": {
+        "type": "object",
+        "properties": {
+          "inventoryBuffer": {
+            "type": "number",
+            "nullable": true,
+            "description": "Units held back from this store"
+          },
+          "maxQuantity": {
+            "type": "number",
+            "nullable": true,
+            "description": "The most units this store shows"
+          }
+        },
+        "required": [
+          "inventoryBuffer",
+          "maxQuantity"
+        ]
+      },
+      "InheritedPriceDto": {
+        "type": "object",
+        "properties": {
+          "product": {
+            "type": "string",
+            "example": "89.00",
+            "description": "The catalog price, in the workspace currency"
+          },
+          "override": {
+            "type": "string",
+            "nullable": true,
+            "example": "79.00"
+          },
+          "effective": {
+            "type": "string",
+            "example": "102.99",
+            "description": "In the store’s currency: the override, else the pricing rule’s result"
+          },
+          "overridden": {
+            "type": "boolean",
+            "description": "Whether the store overrides it; reverting sets `override` to null"
+          }
+        },
+        "required": [
+          "product",
+          "override",
+          "effective",
+          "overridden"
+        ]
+      },
+      "InheritedCompareAtPriceDto": {
+        "type": "object",
+        "properties": {
+          "product": {
+            "type": "string",
+            "nullable": true,
+            "description": "In the workspace currency"
+          },
+          "override": {
+            "type": "string",
+            "nullable": true
+          },
+          "effective": {
+            "type": "string",
+            "nullable": true,
+            "description": "In the store’s currency"
+          },
+          "overridden": {
+            "type": "boolean",
+            "description": "Whether the store overrides it; reverting sets `override` to null"
+          }
+        },
+        "required": [
+          "product",
+          "override",
+          "effective",
+          "overridden"
+        ]
+      },
+      "ListingEditorVariantDto": {
+        "type": "object",
+        "properties": {
+          "variantId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string",
+            "example": "Blue / Large"
+          },
+          "sku": {
+            "type": "string",
+            "nullable": true
+          },
+          "price": {
+            "$ref": "#/components/schemas/InheritedPriceDto"
+          },
+          "rulePrice": {
+            "type": "string",
+            "example": "102.99",
+            "description": "In the store’s currency: what its pricing rule gives, before a fixed price on the listing. Equal to the effective price unless the price is overridden."
+          },
+          "compareAtPrice": {
+            "$ref": "#/components/schemas/InheritedCompareAtPriceDto"
+          },
+          "resolvedPrice": {
+            "description": "How the effective price was reached",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResolvedPriceDto"
+              }
+            ]
+          },
+          "quantity": {
+            "type": "number",
+            "nullable": true,
+            "description": "The stock the store shows; null when the variant does not track stock"
+          }
+        },
+        "required": [
+          "variantId",
+          "title",
+          "sku",
+          "price",
+          "rulePrice",
+          "compareAtPrice",
+          "resolvedPrice",
+          "quantity"
+        ]
+      },
+      "ListingCategoryFieldDto": {
+        "type": "object",
+        "properties": {
+          "supported": {
+            "type": "boolean",
+            "description": "Whether the channel has categories (eBay)"
+          },
+          "value": {
+            "nullable": true,
+            "description": "Null until the merchant chose one or a publish picked one",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChannelCategoryDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "supported",
+          "value"
+        ]
+      },
+      "ListingItemSpecificsSummaryDto": {
+        "type": "object",
+        "properties": {
+          "supported": {
+            "type": "boolean",
+            "description": "Whether the channel has item specifics (eBay)"
+          },
+          "count": {
+            "type": "number",
+            "description": "How many item specifics the merchant set on the listing"
+          },
+          "names": {
+            "example": [
+              "Brand",
+              "Color"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "supported",
+          "count",
+          "names"
+        ]
+      },
+      "ListingEditorDto": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "connection": {
+            "$ref": "#/components/schemas/ConnectionSummaryDto"
+          },
+          "selected": {
+            "type": "boolean",
+            "description": "Whether the connection’s product selection includes it"
+          },
+          "displayState": {
+            "description": "The product on this store, in one state computed by the server: `draft` (not selected for the store), `needs_details` (selected, but the store setup or the product lacks something publishing needs), `ready` (publishable, not sent yet), `publishing` (queued or in flight, including an update of a published listing that a sync or retry queued), `published`, `failed`, `removing` (being taken off) or `removed`.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ListingDisplayState"
+              }
+            ]
+          },
+          "displayReason": {
+            "type": "string",
+            "nullable": true,
+            "example": "Choose a shipping policy in this eBay connection’s listing defaults.",
+            "description": "For `needs_details` and `failed`: a short, merchant-readable reason (what to add, or the channel’s message). Never holds secrets. Null for the other states."
+          },
+          "displayRequirement": {
+            "nullable": true,
+            "description": "For `needs_details`: the requirement to fix first, so a client can open the right place. Store-setup requirements (`reconnect`, `account_settings`, `shipping_policy`, `payment_policy`, `return_policy`, `ship_from_location`, `listing_setup`) come before the product’s (`images`, `active_product`, `option_names`), which the server checks before publishing; `category` and `item_specifics` are known once the channel refused a publish. Null for the other states.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublishRequirement"
+              }
+            ]
+          },
+          "listing": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ListingSummaryDto"
+              }
+            ]
+          },
+          "title": {
+            "$ref": "#/components/schemas/InheritedTextDto"
+          },
+          "descriptionHtml": {
+            "$ref": "#/components/schemas/InheritedTextDto"
+          },
+          "vendor": {
+            "description": "The brand the store shows",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/InheritedOptionalTextDto"
+              }
+            ]
+          },
+          "tags": {
+            "$ref": "#/components/schemas/InheritedTextListDto"
+          },
+          "images": {
+            "description": "Image URLs in order; an override is a subset of the product’s, in its order",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/InheritedTextListDto"
+              }
+            ]
+          },
+          "visibility": {
+            "$ref": "#/components/schemas/InheritedVisibilityDto"
+          },
+          "stock": {
+            "$ref": "#/components/schemas/ListingStockLimitsDto"
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ListingEditorVariantDto"
+            }
+          },
+          "category": {
+            "$ref": "#/components/schemas/ListingCategoryFieldDto"
+          },
+          "itemSpecifics": {
+            "$ref": "#/components/schemas/ListingItemSpecificsSummaryDto"
+          },
+          "overrideUpdatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "When the overrides last changed; null when there are none"
+          }
+        },
+        "required": [
+          "productId",
+          "connection",
+          "selected",
+          "displayState",
+          "displayReason",
+          "displayRequirement",
+          "listing",
+          "title",
+          "descriptionHtml",
+          "vendor",
+          "tags",
+          "images",
+          "visibility",
+          "stock",
+          "variants",
+          "category",
+          "itemSpecifics",
+          "overrideUpdatedAt"
+        ]
       },
       "ChooseChannelCategoryDto": {
         "type": "object",
@@ -9985,6 +11857,13 @@
             "type": "number",
             "description": "Available units at or below which stock counts as low"
           },
+          "lowestStock": {
+            "description": "Tracked variants out of stock or low, fewest available first (oversold before sold out), at most a few: the ones to restock first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InventoryItemDto"
+            }
+          },
           "stores": {
             "description": "Every store, oldest first",
             "type": "array",
@@ -9998,7 +11877,245 @@
           "value",
           "stockLevels",
           "lowStockThreshold",
+          "lowestStock",
           "stores"
+        ]
+      },
+      "ListingStateCountDto": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ListingDisplayState"
+              }
+            ]
+          },
+          "count": {
+            "type": "number",
+            "description": "Products of the catalog in this state on the store"
+          }
+        },
+        "required": [
+          "state",
+          "count"
+        ]
+      },
+      "StoreListingHealthDto": {
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "channel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChannelType"
+              }
+            ]
+          },
+          "displayName": {
+            "type": "string",
+            "example": "Demo Store"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChannelConnectionStatus"
+              }
+            ]
+          },
+          "statusReason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why the store needs reconnecting or is in error; null otherwise"
+          },
+          "lastSyncedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "states": {
+            "description": "Every display state, in order, with how many products are in it: the same states and rule as the store’s product list (`draft` counts the catalog products not in the store)",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ListingStateCountDto"
+            }
+          },
+          "failedListings": {
+            "type": "number",
+            "description": "Listings the channel refused on their last sync"
+          }
+        },
+        "required": [
+          "connectionId",
+          "channel",
+          "displayName",
+          "status",
+          "statusReason",
+          "lastSyncedAt",
+          "states",
+          "failedListings"
+        ]
+      },
+      "StoreListingFailureDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ListingStatus"
+              }
+            ]
+          },
+          "source": {
+            "description": "How the product joined the store: by hand, by an import, or by the automatic rule",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ListingSource"
+              }
+            ]
+          },
+          "externalId": {
+            "type": "string",
+            "nullable": true,
+            "description": "The product’s id on the channel"
+          },
+          "externalUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where to see it on the channel"
+          },
+          "lastError": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why the last sync failed"
+          },
+          "missingRequirement": {
+            "nullable": true,
+            "description": "What the channel refused the last publish for lacking (such as `item_specifics`), when the merchant can add it; null otherwise",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublishRequirement"
+              }
+            ]
+          },
+          "lastSyncedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "syncRequestedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "When a sync or retry queued its publish, update or delist; null once that job finished or gave up. While set, a selected listing shows `displayState: publishing`."
+          },
+          "category": {
+            "nullable": true,
+            "description": "The channel category it is listed in, on channels with categories (eBay)",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChannelCategoryDto"
+              }
+            ]
+          },
+          "productId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "productTitle": {
+            "type": "string"
+          },
+          "imageUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "variantCount": {
+            "type": "number"
+          },
+          "displayState": {
+            "description": "The product on this store, in one state computed by the server: `draft` (not selected for the store), `needs_details` (selected, but the store setup or the product lacks something publishing needs), `ready` (publishable, not sent yet), `publishing` (queued or in flight, including an update of a published listing that a sync or retry queued), `published`, `failed`, `removing` (being taken off) or `removed`.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ListingDisplayState"
+              }
+            ]
+          },
+          "displayReason": {
+            "type": "string",
+            "nullable": true,
+            "example": "Choose a shipping policy in this eBay connection’s listing defaults.",
+            "description": "For `needs_details` and `failed`: a short, merchant-readable reason (what to add, or the channel’s message). Never holds secrets. Null for the other states."
+          },
+          "displayRequirement": {
+            "nullable": true,
+            "description": "For `needs_details`: the requirement to fix first, so a client can open the right place. Store-setup requirements (`reconnect`, `account_settings`, `shipping_policy`, `payment_policy`, `return_policy`, `ship_from_location`, `listing_setup`) come before the product’s (`images`, `active_product`, `option_names`), which the server checks before publishing; `category` and `item_specifics` are known once the channel refused a publish. Null for the other states.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublishRequirement"
+              }
+            ]
+          },
+          "connectionId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The store the listing is on"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "source",
+          "externalId",
+          "externalUrl",
+          "lastError",
+          "missingRequirement",
+          "lastSyncedAt",
+          "syncRequestedAt",
+          "category",
+          "productId",
+          "productTitle",
+          "imageUrl",
+          "variantCount",
+          "displayState",
+          "displayReason",
+          "displayRequirement",
+          "connectionId"
+        ]
+      },
+      "ListingHealthReportDto": {
+        "type": "object",
+        "properties": {
+          "stores": {
+            "description": "Every store, oldest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StoreListingHealthDto"
+            }
+          },
+          "recentFailures": {
+            "description": "The latest listings a channel refused, latest first, each with its display state and requirement so a client can link to the fix",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StoreListingFailureDto"
+            }
+          },
+          "failedListings": {
+            "type": "number",
+            "description": "Failed listings in all, across the stores"
+          }
+        },
+        "required": [
+          "stores",
+          "recentFailures",
+          "failedListings"
         ]
       },
       "SuggestionStatus": {
@@ -10334,7 +12451,8 @@
         "type": "string",
         "enum": [
           "content_generation",
-          "content_draft"
+          "content_draft",
+          "ask"
         ]
       },
       "AiUsageLineDto": {
@@ -10499,7 +12617,735 @@
           "title",
           "descriptionHtml"
         ]
+      },
+      "AgentClientRegistration": {
+        "type": "string",
+        "enum": [
+          "metadata_document",
+          "dynamic"
+        ],
+        "description": "`metadata_document`: Crossmart fetched the agent’s metadata from its HTTPS client id. `dynamic`: the agent registered itself, and its name and site are unverified."
+      },
+      "AgentClientDto": {
+        "type": "object",
+        "properties": {
+          "clientId": {
+            "type": "string",
+            "description": "The OAuth client id: a Client ID Metadata Document URL, or a registered id"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name to show. Verified only for a `metadata_document` client, through `verifiedHost`; a `dynamic` client chose it itself, and any client can call itself \"Claude\"."
+          },
+          "registration": {
+            "description": "`metadata_document`: Crossmart fetched the agent’s metadata from its HTTPS client id. `dynamic`: the agent registered itself, and its name and site are unverified.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AgentClientRegistration"
+              }
+            ]
+          },
+          "verifiedHost": {
+            "type": "string",
+            "nullable": true,
+            "example": "claude.ai",
+            "description": "For a `metadata_document` client: the host its metadata came from"
+          },
+          "claimedHost": {
+            "type": "string",
+            "nullable": true,
+            "description": "For a `dynamic` client: the HTTPS host of the site it claims. Not verified."
+          }
+        },
+        "required": [
+          "clientId",
+          "name",
+          "registration",
+          "verifiedHost",
+          "claimedHost"
+        ]
+      },
+      "PickAgentWorkspaceDto": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "A workspace the signed-in user belongs to"
+          }
+        },
+        "required": [
+          "workspaceId"
+        ]
+      },
+      "AgentScope": {
+        "type": "string",
+        "enum": [
+          "catalog:read",
+          "catalog:write",
+          "orders:read",
+          "stores:write",
+          "reports:read",
+          "suggestions:write",
+          "webhooks:write"
+        ]
+      },
+      "AgentConnectionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "clientId": {
+            "type": "string",
+            "description": "The OAuth client id: a Client ID Metadata Document URL, or a registered id"
+          },
+          "clientName": {
+            "type": "string",
+            "description": "The name the agent gives, such as \"Claude\""
+          },
+          "clientRegistration": {
+            "description": "Whether `clientName` came from a verified host (`metadata_document`) or is only what the agent calls itself (`dynamic`)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AgentClientRegistration"
+              }
+            ]
+          },
+          "clientVerifiedHost": {
+            "type": "string",
+            "nullable": true,
+            "description": "For a `metadata_document` client: the host its metadata came from"
+          },
+          "clientUri": {
+            "type": "string",
+            "nullable": true,
+            "description": "The agent’s home page"
+          },
+          "clientIcon": {
+            "type": "string",
+            "nullable": true,
+            "description": "The agent’s logo address, from its metadata. Crossmart never fetches it."
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The member who connected the agent"
+          },
+          "userName": {
+            "type": "string"
+          },
+          "userEmail": {
+            "type": "string"
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentScope"
+            }
+          },
+          "connectedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "clientId",
+          "clientName",
+          "clientRegistration",
+          "clientVerifiedHost",
+          "clientUri",
+          "clientIcon",
+          "userId",
+          "userName",
+          "userEmail",
+          "scopes",
+          "connectedAt"
+        ]
+      },
+      "AskQuestionDto": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 500,
+            "description": "A question about Crossmart, in any language",
+            "example": "Can I publish the same product to Shopify and eBay?"
+          }
+        },
+        "required": [
+          "question"
+        ]
+      },
+      "AskOutcome": {
+        "type": "string",
+        "enum": [
+          "answered",
+          "unknown",
+          "out_of_scope"
+        ],
+        "description": "`answered` from the cited pages; `unknown` when the docs do not answer it (the answer points to support); `out_of_scope` when it is not about Crossmart"
+      },
+      "AskCitationDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "The page and section, such as \"Crossmart for developers › Rate limits\""
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "The public page the answer is based on"
+          }
+        },
+        "required": [
+          "title",
+          "url"
+        ]
+      },
+      "AskConfidence": {
+        "type": "string",
+        "enum": [
+          "high",
+          "medium",
+          "low"
+        ]
+      },
+      "AskAnswerDto": {
+        "type": "object",
+        "properties": {
+          "outcome": {
+            "description": "`answered` from the cited pages; `unknown` when the docs do not answer it (the answer points to support); `out_of_scope` when it is not about Crossmart",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AskOutcome"
+              }
+            ]
+          },
+          "answer": {
+            "type": "string",
+            "description": "The answer, in plain text (no Markdown)"
+          },
+          "citations": {
+            "description": "Pages the answer is based on",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AskCitationDto"
+            }
+          },
+          "confidence": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AskConfidence"
+              }
+            ]
+          },
+          "handoff": {
+            "type": "boolean",
+            "description": "True when a person should take over, at supportEmail"
+          },
+          "supportEmail": {
+            "type": "string",
+            "format": "email"
+          }
+        },
+        "required": [
+          "outcome",
+          "answer",
+          "citations",
+          "confidence",
+          "handoff",
+          "supportEmail"
+        ]
+      },
+      "WebhookEventType": {
+        "type": "string",
+        "enum": [
+          "order.created",
+          "order.updated",
+          "inventory.stock_changed",
+          "listing.published",
+          "listing.failed",
+          "listing.removed",
+          "product.created",
+          "product.updated",
+          "product.deleted",
+          "webhook.test"
+        ]
+      },
+      "WebhookDisabledReason": {
+        "type": "string",
+        "enum": [
+          "MANUAL",
+          "FAILING"
+        ],
+        "description": "MANUAL: turned off by someone. FAILING: turned off by Crossmart."
+      },
+      "WebhookAttemptOutcome": {
+        "type": "string",
+        "enum": [
+          "SUCCEEDED",
+          "FAILED"
+        ],
+        "description": "SUCCEEDED: the endpoint answered 2xx. FAILED: anything else, or no answer."
+      },
+      "WebhookEndpointLastDeliveryDto": {
+        "type": "object",
+        "properties": {
+          "attemptedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "outcome": {
+            "description": "SUCCEEDED: the endpoint answered 2xx. FAILED: anything else, or no answer.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WebhookAttemptOutcome"
+              }
+            ]
+          },
+          "responseStatus": {
+            "type": "number",
+            "nullable": true,
+            "example": 200,
+            "description": "Null when no response came: a timeout or a connection error"
+          },
+          "error": {
+            "type": "string",
+            "nullable": true,
+            "example": "The endpoint answered with HTTP 503",
+            "description": "Why the attempt failed; null on success"
+          }
+        },
+        "required": [
+          "attemptedAt",
+          "outcome",
+          "responseStatus",
+          "error"
+        ]
+      },
+      "WebhookEndpointDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "url": {
+            "type": "string",
+            "example": "https://example.com/crossmart/webhooks"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "example": "Order notifications to n8n"
+          },
+          "eventTypes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebhookEventType"
+            }
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "False when turned off by someone or after repeated failures"
+          },
+          "disabledReason": {
+            "nullable": true,
+            "description": "MANUAL: turned off by someone. FAILING: turned off by Crossmart.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WebhookDisabledReason"
+              }
+            ]
+          },
+          "disabledAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "consecutiveFailures": {
+            "type": "number",
+            "description": "Failed attempts since the last delivery that went through"
+          },
+          "lastDelivery": {
+            "nullable": true,
+            "description": "The latest delivery attempt, whatever event it carried; null before the first",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WebhookEndpointLastDeliveryDto"
+              }
+            ]
+          },
+          "previousSecretExpiresAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "Until then deliveries are also signed with the secret the last rotation replaced"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "url",
+          "description",
+          "eventTypes",
+          "enabled",
+          "disabledReason",
+          "disabledAt",
+          "consecutiveFailures",
+          "lastDelivery",
+          "previousSecretExpiresAt",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CreateWebhookEndpointDto": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "example": "https://example.com/crossmart/webhooks",
+            "description": "Where events are POSTed. https and a public address; plain http only outside production."
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 500
+          },
+          "eventTypes": {
+            "type": "array",
+            "description": "The events to receive. `webhook.test` cannot be subscribed to.",
+            "items": {
+              "$ref": "#/components/schemas/WebhookEventType"
+            }
+          }
+        },
+        "required": [
+          "url",
+          "eventTypes"
+        ]
+      },
+      "WebhookEndpointWithSecretDto": {
+        "type": "object",
+        "properties": {
+          "endpoint": {
+            "$ref": "#/components/schemas/WebhookEndpointDto"
+          },
+          "secret": {
+            "type": "string",
+            "example": "whsec_3q2-7wEXAMPLEsecretVALUE0123456789abcdef",
+            "description": "The signing secret. Shown once; store it now."
+          }
+        },
+        "required": [
+          "endpoint",
+          "secret"
+        ]
+      },
+      "UpdateWebhookEndpointDto": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "Where events are POSTed. https and a public address; plain http only outside production."
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 500
+          },
+          "eventTypes": {
+            "type": "array",
+            "description": "The events to receive. `webhook.test` cannot be subscribed to.",
+            "items": {
+              "$ref": "#/components/schemas/WebhookEventType"
+            }
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "false turns the endpoint off; true turns it back on and clears its failures"
+          }
+        }
+      },
+      "WebhookDeliveryStatus": {
+        "type": "string",
+        "enum": [
+          "PENDING",
+          "RETRYING",
+          "SUCCEEDED",
+          "FAILED"
+        ]
+      },
+      "WebhookDeliveryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Sent as the Crossmart-Delivery-Id header"
+          },
+          "endpointId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "eventId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The event id; the same on every redelivery"
+          },
+          "eventType": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WebhookEventType"
+              }
+            ]
+          },
+          "status": {
+            "description": "RETRYING: an attempt failed and another is scheduled at nextAttemptAt",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WebhookDeliveryStatus"
+              }
+            ]
+          },
+          "attempts": {
+            "type": "number",
+            "description": "Attempts made so far"
+          },
+          "responseStatus": {
+            "type": "number",
+            "nullable": true,
+            "description": "HTTP status of the latest attempt"
+          },
+          "durationMs": {
+            "type": "number",
+            "nullable": true
+          },
+          "error": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why the latest attempt failed"
+          },
+          "nextAttemptAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "lastAttemptAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "deliveredAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "endpointId",
+          "eventId",
+          "eventType",
+          "status",
+          "attempts",
+          "responseStatus",
+          "durationMs",
+          "error",
+          "nextAttemptAt",
+          "lastAttemptAt",
+          "deliveredAt",
+          "createdAt"
+        ]
+      },
+      "WebhookDeliveryPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebhookDeliveryDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor",
+          "total"
+        ]
+      },
+      "WebhookEnvelopeDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The event id: deduplicate on it"
+          },
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WebhookEventType"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When the change happened"
+          },
+          "workspaceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "apiVersion": {
+            "type": "string",
+            "example": "v1"
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "The event’s data; its shape depends on the type"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "createdAt",
+          "workspaceId",
+          "apiVersion",
+          "data"
+        ]
+      },
+      "WebhookDeliveryDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Sent as the Crossmart-Delivery-Id header"
+          },
+          "endpointId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "eventId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The event id; the same on every redelivery"
+          },
+          "eventType": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WebhookEventType"
+              }
+            ]
+          },
+          "status": {
+            "description": "RETRYING: an attempt failed and another is scheduled at nextAttemptAt",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WebhookDeliveryStatus"
+              }
+            ]
+          },
+          "attempts": {
+            "type": "number",
+            "description": "Attempts made so far"
+          },
+          "responseStatus": {
+            "type": "number",
+            "nullable": true,
+            "description": "HTTP status of the latest attempt"
+          },
+          "durationMs": {
+            "type": "number",
+            "nullable": true
+          },
+          "error": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why the latest attempt failed"
+          },
+          "nextAttemptAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "lastAttemptAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "deliveredAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "payload": {
+            "description": "The JSON body every attempt sends",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WebhookEnvelopeDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "endpointId",
+          "eventId",
+          "eventType",
+          "status",
+          "attempts",
+          "responseStatus",
+          "durationMs",
+          "error",
+          "nextAttemptAt",
+          "lastAttemptAt",
+          "deliveredAt",
+          "createdAt",
+          "payload"
+        ]
       }
     }
-  }
+  },
+  "security": [
+    {
+      "api_key": []
+    },
+    {
+      "cookie": []
+    },
+    {
+      "bearer": []
+    }
+  ]
 }

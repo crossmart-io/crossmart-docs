@@ -38,7 +38,8 @@ claude mcp add --transport http crossmart https://mcp.crossmart.io/mcp
 
 The access token acts for that seller in that workspace only, never beyond their role, and is
 limited to the scopes they approved: `catalog:read`, `catalog:write`, `orders:read`,
-`stores:write`, `reports:read` and `suggestions:write`. The server offers only the tools those
+`stores:write`, `reports:read`, `suggestions:write` and `webhooks:write` (to list and add
+[webhook endpoints](/developers/webhooks/#from-an-ai-agent)). The server offers only the tools those
 scopes cover, and the API checks every call. Sellers disconnect agents under
 **Settings → Connected agents**.
 
@@ -153,6 +154,8 @@ than a pasted key; see their [setup guides](/agents/).
 | `generate_content`          | Queues AI titles and descriptions for products on a store              |     Yes      |
 | `list_suggestions`          | Proposed changes with current and proposed value and rationale         |              |
 | `approve_suggestion`        | Applies a pending suggestion (or reports it `STALE`)                   |     Yes      |
+| `list_webhook_endpoints`    | The URLs the workspace sends events to, and which events each gets     |              |
+| `create_webhook_endpoint`   | Adds a URL to send events to; returns its signing secret once          |     Yes      |
 | `ask_crossmart`             | Answers questions about Crossmart itself from its docs, with sources   |              |
 
 Read-only tools are marked `readOnlyHint`, and `replace_product`, `remove_product_from_store` and

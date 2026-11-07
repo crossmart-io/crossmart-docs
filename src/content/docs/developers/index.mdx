@@ -28,6 +28,16 @@ public REST API, so your scripts, integrations and AI agents can do it too.
     description="Synchronous and asynchronous clients, typed from the OpenAPI spec."
   />
   <LinkCard
+    title="PHP SDK"
+    href="/developers/sdks/php/"
+    description="crossmart/crossmart-php, on any PSR-18 HTTP client."
+  />
+  <LinkCard
+    title="Webhooks"
+    href="/developers/webhooks/"
+    description="Receive orders, stock, listing and product events as they happen."
+  />
+  <LinkCard
     title="MCP server"
     href="/developers/mcp/"
     description="Connect Claude, ChatGPT, Cursor and other AI agents."
@@ -46,8 +56,9 @@ public REST API, so your scripts, integrations and AI agents can do it too.
 
 The [API reference](/developers/api/) lists every endpoint with its fields. The interactive docs
 let you try them with your key (**Authorize → api_key**). Generate a client in any language from
-the OpenAPI spec, or use the [TypeScript](/developers/sdks/typescript/) or
-[Python](/developers/sdks/python/) SDK.
+the OpenAPI spec, or use the [TypeScript](/developers/sdks/typescript/),
+[Python](/developers/sdks/python/) or [PHP](/developers/sdks/php/) SDK. To react to changes as they
+happen instead of polling, use [webhooks](/developers/webhooks/).
 
 ### Versioning
 
@@ -165,7 +176,7 @@ List endpoints return one page at a time:
 - `total`: how many items match the filters in all.
 
 Unlike page numbers, cursors do not skip or repeat items when rows are added while you read. The
-SDKs walk the pages for you: `listAll()` in TypeScript, `iter()` in Python.
+SDKs walk the pages for you: `listAll()` in TypeScript and PHP, `iter()` in Python.
 
 ## Rate limits
 
@@ -194,7 +205,9 @@ or `ERROR` (with the store's message in `lastError`) when it refuses. The
 ## Where to go next
 
 - [Quickstart](/developers/quickstart/)
-- [TypeScript SDK](/developers/sdks/typescript/) and [Python SDK](/developers/sdks/python/)
+- [TypeScript](/developers/sdks/typescript/), [Python](/developers/sdks/python/) and
+  [PHP](/developers/sdks/php/) SDKs
+- [Webhooks](/developers/webhooks/)
 - [MCP server for AI agents](/developers/mcp/)
 - [Roles and permissions](/developers/permissions/)
 - [API reference](/developers/api/)
