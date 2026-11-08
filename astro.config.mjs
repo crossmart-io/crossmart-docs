@@ -79,6 +79,7 @@ export default defineConfig({
             { label: 'Pricing', link: '/sellers/pricing/' },
             { label: 'Stock sync', link: '/sellers/stock/' },
             { label: 'Orders', link: '/sellers/orders/' },
+            { label: 'Agent Worker', link: '/sellers/agent-worker/' },
           ],
         },
         {
