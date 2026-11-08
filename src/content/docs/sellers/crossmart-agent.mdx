@@ -1,0 +1,176 @@
+---
+title: Crossmart Agent
+description: Crossmart Agent is the AI agent inside Crossmart. Chat with it, watch it work on a live map of your stores, and follow everything that happens in your workspace. Every change waits for your approval.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Crossmart Agent is an AI agent you chat with inside Crossmart. You ask it to do something, such
+as "Fix my failed eBay listings", and it looks up what it needs and proposes the changes. Nothing
+changes until you approve. While it works, you see on a live map of your catalog and stores what
+it is reading and changing, next to a stream of everything that happens in your workspace.
+
+You don't need to set up your own AI agent to use it. If you do use one through
+[MCP](/agents/), Crossmart Agent works with the same tools and the same limits.
+
+<Aside>
+  Crossmart Agent was called Agent Worker. The API and the `agent_worker:use` permission keep that
+  name.
+</Aside>
+
+## Open it
+
+- **The sidebar:** **Crossmart Agent**, where **Channel map** used to be. Old links to the
+  channel map open this page.
+- **Anywhere:** the **Crossmart Agent** button in the header, or <kbd>Cmd</kbd>+<kbd>J</kbd>
+  (<kbd>Ctrl</kbd>+<kbd>J</kbd> on Windows and Linux).
+- **A store with failed listings:** **Fix with Crossmart Agent** on the store's card opens the page
+  with a message ready to send ("Fix the failed listings on …"). Edit it or press send.
+- **A product's page:** the product's **Channel map** card has **Open in Crossmart Agent**. There,
+  "this product" means that product.
+
+A conversation keeps running while you visit other pages; come back to see where it is.
+
+## The page
+
+The page has three parts side by side. On a phone they are three tabs: **Chat**, **Map** and
+**Events**.
+
+### Chat
+
+Your conversation with Crossmart Agent. Earlier conversations are under **Conversations**, and the
+pen button starts a new one. Only you see your conversations. Each step the agent takes shows as a
+short line, such as "List a store's products by state · 3 found", and changes it proposes wait in a
+**Review the changes** card (see below).
+
+### Map
+
+Your catalog and every store it feeds, with how many products are published, pending, failed or
+not listed on each. Above it, a status bar shows at a glance:
+
+- **Stores:** how many are connected with no failed listings, of all your stores.
+- **Listings:** how many are live, and how many failed.
+- **Agent:** idle, working, or waiting for your approval.
+- **Last sync:** when a store last synced.
+
+The map shows what Crossmart Agent is doing as it does it:
+
+- The store or the catalog it is working on is outlined, with a label: "Reading: List a store's
+  products by state", "Proposed: 3 changes", "Updating: …", "Applied: …".
+- A number on a store counts the changes waiting for you there. Click it to go to them in the chat.
+- While an approved change is on its way to a store, the line to that store moves. The counts
+  update as the store's listings are published or fail.
+
+### Events
+
+A live timeline of what happens in your workspace, newest first:
+
+- Crossmart Agent's steps: what it read, what it proposed, what you approved or rejected, and what
+  was applied or failed.
+- Other agents and programs: changes made through MCP or an API key, named after the agent or key.
+- Listings published or refused, with the marketplace's reason.
+- Stock: levels a store refused, and corrections made by the regular stock check.
+- Orders as they arrive.
+- Webhook deliveries that failed.
+
+Filter it with **All**, **Agent**, **Stores**, **Orders** or **Errors**. Point at an event to
+outline its store or product on the map; click it to open what it is about (a product, an order,
+a store, a webhook, or the changes waiting in the chat). On a phone, the **Events** tab counts the
+events you haven't seen, and the **Map** tab lights up while the agent is working.
+
+Which events you see depends on your role: orders need permission to view orders, webhook
+failures need permission to manage webhooks, and only your own conversations show agent steps.
+Other people's approved changes still show, as changes by Crossmart Agent on their behalf.
+
+## What it can do
+
+Crossmart Agent works with your catalog, stock, stores and orders. For example:
+
+- "Which products are low on stock?"
+- "Fix my failed eBay listings"
+- "Publish the Linen Shirt to my Outlet store"
+- "Rewrite titles for Etsy"
+- "Add 20 units of the M size, stock received"
+- "Change the price of the M size to $43"
+
+It can find products, stock, listings, orders and reports, edit products and prices, adjust
+stock, add products to stores and take them off, and ask Crossmart's AI for content. It can also
+answer questions about Crossmart itself.
+
+It can't connect or disconnect stores, manage members or API keys, change settings or billing, or
+manage webhooks. Do those yourself in the dashboard.
+
+## Reads run at once, changes wait for you
+
+When Crossmart Agent only needs to look something up, it does so right away.
+
+When it wants to change something, it stops and shows a **Review the changes** card. Each change
+says what it does in plain words, which product and store it touches, and the values **Now** and
+**After**, such as "Price (M): $48.00 → $43.00". Longer text, such as a description, shows which
+words change.
+
+- Tick the changes you want and click **Approve selected**. The ones you leave unticked are
+  rejected.
+- **Reject all** turns them all down.
+- If you send a new message instead, the changes still waiting are dropped.
+
+Approved changes run with your permissions at that moment, and each one shows whether it was
+applied or failed. Crossmart Agent then carries on with the results. Every change is recorded in
+**Activity** as "Crossmart Agent" on your behalf.
+
+**Stop** ends what Crossmart Agent is doing.
+
+## Extra confirmation for risky changes
+
+Some changes carry a red badge and need a second step. Before **Approve selected** works, you
+tick a box such as "I understand this deletes".
+
+| Badge              | When                                                                                  |
+| ------------------ | ------------------------------------------------------------------------------------- |
+| **Deletes**        | The change deletes something or takes it off sale                                     |
+| **Changes prices** | The change sets a price or compare-at price that differs from today's                 |
+| **Many items**     | The change touches more than 5 items, or your approval publishes more than 5 listings |
+
+If text Crossmart Agent read in that step looks like instructions to an AI (for example, a product
+description that says "ignore previous instructions"), the card warns you: "Text read in this
+turn looked like instructions; review carefully". Crossmart Agent treats what it reads as data,
+and it can still only propose; you decide.
+
+## AI credits
+
+Every time Crossmart Agent calls the AI model, it uses one AI credit, the same as Crossmart's
+other AI features. One message can take several calls, because it calls the model again after
+each lookup. A message makes at most 8 calls.
+
+- If you have no credits left, Crossmart Agent can't start.
+- If credits run out partway through, it stops and keeps what it already did.
+
+The map and the events don't use AI credits. Your credits are under **Settings → Plan & usage**.
+
+## Who can use it
+
+Owners, Admins and Editors can chat with Crossmart Agent. Approvers and Viewers can open the page
+and follow the map and the events, but can't chat. A custom role can include the chat with the
+`agent_worker:use` permission (see [Roles and permissions](/developers/permissions/)); the map and
+events need permission to view activity.
+
+Crossmart Agent can never do more than your role allows. If your role can't make a change, the
+change is refused when you approve it, and the card says so.
+
+## When it is limited
+
+- **A sandbox account** (one an AI agent created for you that you haven't claimed yet) can't chat
+  with Crossmart Agent. Claim the account first.
+- **A read-only account** (when the subscription isn't paid) can still chat with Crossmart Agent
+  and look things up, but it can't propose changes.
+- **One message at a time** per conversation. Wait for the answer, or press **Stop**.
+
+Conversations are kept for 180 days after the last message, then deleted.
+
+<Aside title="For developers">
+  Crossmart Agent uses the same tools as Crossmart's [MCP server](/developers/mcp/), and every call
+  goes through the same API, with the same checks and the same activity log. The events on the page
+  come from the workspace event stream, `GET /workspaces/{workspaceId}/events/stream` (server-sent
+  events, resumable with `Last-Event-ID`), or `GET /workspaces/{workspaceId}/events?after=…` to
+  poll. Both need the `activity:view` permission.
+</Aside>

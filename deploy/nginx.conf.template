@@ -57,6 +57,11 @@ server {
   # The request path before try_files rewrites it to a file.
   set $page_uri $uri;
 
+  # Pages that moved: a permanent redirect, so links and search engines follow.
+  location ~ ^/sellers/agent-worker(?<moved_suffix>/|\.md)?$ {
+    return 301 /sellers/crossmart-agent$moved_suffix;
+  }
+
   # Hashed build assets never change, so cache them for a year.
   location /_astro/ {
     add_header Cache-Control "public, max-age=31536000, immutable";

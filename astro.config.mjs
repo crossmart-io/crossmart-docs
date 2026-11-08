@@ -19,6 +19,8 @@ const LLMS_MARKDOWN_DETAILS = `Any page on this site is available as Markdown: r
 
 export default defineConfig({
   site: SITE_URL,
+  // Agent Worker was renamed Crossmart Agent; old links keep working.
+  redirects: { '/sellers/agent-worker/': '/sellers/crossmart-agent/' },
   integrations: [
     starlight({
       title: 'Crossmart Docs',
@@ -79,7 +81,7 @@ export default defineConfig({
             { label: 'Pricing', link: '/sellers/pricing/' },
             { label: 'Stock sync', link: '/sellers/stock/' },
             { label: 'Orders', link: '/sellers/orders/' },
-            { label: 'Agent Worker', link: '/sellers/agent-worker/' },
+            { label: 'Crossmart Agent', link: '/sellers/crossmart-agent/' },
           ],
         },
         {
