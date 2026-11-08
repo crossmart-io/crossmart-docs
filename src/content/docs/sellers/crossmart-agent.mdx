@@ -36,6 +36,9 @@ A conversation keeps running while you visit other pages; come back to see where
 The page has three parts side by side. On a phone they are three tabs: **Chat**, **Map** and
 **Events**.
 
+To make room, the page opens with the app's sidebar collapsed to its icons. Open it with the
+button at the top left; Crossmart remembers your choice for this page in this browser.
+
 ### Chat
 
 Your conversation with Crossmart Agent. Earlier conversations are under **Conversations**, and the
@@ -73,7 +76,9 @@ A live timeline of what happens in your workspace, newest first:
 - Orders as they arrive.
 - Webhook deliveries that failed.
 
-Filter it with **All**, **Agent**, **Stores**, **Orders** or **Errors**. Point at an event to
+Filter it with **All**, **Agent**, **Stores**, **Orders** or **Errors**. On a wide screen,
+**Hide events** (in its header) gives the map the room; the rail left in its place counts new
+events and brings the column back. Crossmart remembers your choice in this browser. Point at an event to
 outline its store or product on the map; click it to open what it is about (a product, an order,
 a store, a webhook, or the changes waiting in the chat). On a phone, the **Events** tab counts the
 events you haven't seen, and the **Map** tab lights up while the agent is working.
@@ -170,8 +175,8 @@ Conversations are kept for 180 days after the last message, then deleted.
 <Aside title="For developers">
   Crossmart Agent uses the same tools as outside agents ([developer reference](/developers/mcp/)),
   and every call goes through the same API, with the same checks and the same activity log. It never
-  makes a change on its own: every change waits for your approval. The events on the page
-  come from the workspace event stream, `GET /workspaces/{workspaceId}/events/stream` (server-sent
-  events, resumable with `Last-Event-ID`), or `GET /workspaces/{workspaceId}/events?after=…` to
-  poll. Both need the `activity:view` permission.
+  makes a change on its own: every change waits for your approval. The events on the page come from
+  the workspace event stream, `GET /workspaces/{workspaceId}/events/stream` (server-sent events,
+  resumable with `Last-Event-ID`), or `GET /workspaces/{workspaceId}/events?after=…` to poll. Both
+  need the `activity:view` permission.
 </Aside>
