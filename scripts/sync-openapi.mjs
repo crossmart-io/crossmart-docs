@@ -8,6 +8,8 @@ const DEFAULT_SPEC_URL = 'https://api.crossmart.io/api/docs-json';
 const DEFAULT_SERVER = { url: 'https://api.crossmart.io', description: 'Crossmart Cloud' };
 const OUTPUT_FILE = new URL('../openapi/crossmart.json', import.meta.url);
 const JSON_INDENTATION = 2;
+/** Platform-admin routes: callable only by Crossmart's own team, so not in the public reference. */
+const ADMIN_PATH_PREFIX = '/api/v1/admin/';
 
 const specUrl = process.env.CROSSMART_OPENAPI_URL ?? DEFAULT_SPEC_URL;
 const response = await fetch(specUrl);
@@ -16,6 +18,9 @@ if (!response.ok) {
 }
 
 const spec = await response.json();
+spec.paths = Object.fromEntries(
+  Object.entries(spec.paths ?? {}).filter(([path]) => !path.startsWith(ADMIN_PATH_PREFIX)),
+);
 if (!spec.servers?.length) {
   spec.servers = [DEFAULT_SERVER];
 }
