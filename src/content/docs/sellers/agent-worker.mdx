@@ -9,8 +9,8 @@ Agent Worker is an AI agent you chat with inside Crossmart. You ask it to do som
 "Fix my failed eBay listings", and it looks up what it needs and proposes the changes. Nothing
 changes until you approve.
 
-You don't need to set up your own AI agent to use it. If you do use one through
-[MCP](/agents/), Agent Worker works with the same tools and the same limits.
+It works inside Crossmart, so no assistant of your own is needed. Outside agents you
+[connect](/agents/) use the same tools and limits.
 
 ## Open it
 
@@ -110,8 +110,9 @@ is refused when you approve it, and the card says so.
 
 Conversations are kept for 180 days after the last message, then deleted.
 
-<Aside title="The same tools as the MCP server">
-  Agent Worker uses the same tools as Crossmart's [MCP server](/developers/mcp/), and every call
-  goes through the same API, with the same checks and the same activity log. The difference is that
-  Agent Worker never makes a change on its own: every change waits for your approval.
+<Aside title="The same rules as any agent">
+  Agent Worker uses the same tools as outside agents ([developer reference](/developers/mcp/)), and
+  every call goes through the same API, with the same checks and the same activity log. The
+  difference is that Agent Worker never makes a change on its own: every change waits for your
+  approval.
 </Aside>
