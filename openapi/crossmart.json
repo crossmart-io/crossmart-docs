@@ -348,7 +348,7 @@
             }
           }
         },
-        "summary": "Rename a workspace or set its time zone",
+        "summary": "Rename a workspace, set its time zone, or say whether agents' changes need approval",
         "tags": [
           "Workspaces"
         ]
@@ -423,11 +423,28 @@
             }
           },
           "402": {
-            "description": "The organization’s plan does not allow this (`ENTITLEMENTS_ENFORCED` is on). `code` and `feature` say why; upgrading the plan resolves it.",
+            "description": "The organization’s plan does not allow this (`ENTITLEMENTS_ENFORCED` is on). `code` and `feature` say why; upgrading the plan resolves it. Where billing is on, `code: subscription_inactive` means the organization is read-only until a billing admin fixes its subscription (`state` says why).",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PlanLimitErrorDto"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/PlanLimitErrorDto"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SubscriptionInactiveErrorDto"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing permission, or (with `code: sandbox_claim_required`) the workspace is an unclaimed sandbox account an AI agent opened: the user must claim it from the emailed link first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SandboxRestrictedErrorDto"
                 }
               }
             }
@@ -657,11 +674,28 @@
             }
           },
           "402": {
-            "description": "The organization’s plan does not allow this (`ENTITLEMENTS_ENFORCED` is on). `code` and `feature` say why; upgrading the plan resolves it.",
+            "description": "The organization’s plan does not allow this (`ENTITLEMENTS_ENFORCED` is on). `code` and `feature` say why; upgrading the plan resolves it. Where billing is on, `code: subscription_inactive` means the organization is read-only until a billing admin fixes its subscription (`state` says why).",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PlanLimitErrorDto"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/PlanLimitErrorDto"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SubscriptionInactiveErrorDto"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing permission, or (with `code: sandbox_claim_required`) the workspace is an unclaimed sandbox account an AI agent opened: the user must claim it from the emailed link first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SandboxRestrictedErrorDto"
                 }
               }
             }
@@ -994,11 +1028,18 @@
             }
           },
           "402": {
-            "description": "The organization’s plan does not allow this (`ENTITLEMENTS_ENFORCED` is on). `code` and `feature` say why; upgrading the plan resolves it.",
+            "description": "The organization’s plan does not allow this (`ENTITLEMENTS_ENFORCED` is on). `code` and `feature` say why; upgrading the plan resolves it. Where billing is on, `code: subscription_inactive` means the organization is read-only until a billing admin fixes its subscription (`state` says why).",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PlanLimitErrorDto"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/PlanLimitErrorDto"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SubscriptionInactiveErrorDto"
+                    }
+                  ]
                 }
               }
             }
@@ -1103,6 +1144,207 @@
         "summary": "The organization’s plan, its limits and current usage",
         "tags": [
           "Plans"
+        ]
+      }
+    },
+    "/api/v1/billing/plans": {
+      "get": {
+        "description": "Open to anyone. Prices come from the billing provider, monthly and annual; a plan with none (Enterprise, or every plan on a self-hosted instance) is not self-serve and is sold through `salesEmail`.",
+        "operationId": "BillingPlansController_list_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingPlanCatalogDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "The plans on offer, with what each includes and costs",
+        "tags": [
+          "Billing"
+        ]
+      }
+    },
+    "/api/v1/organizations/{organizationId}/billing": {
+      "get": {
+        "description": "For people holding `billing:view` in a workspace of the organization. Includes whether it is read-only and why, and whether a checkout would start with a trial. Usage against limits is at `GET /organizations/{organizationId}/subscription`.",
+        "operationId": "OrganizationBillingController_get_v1",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingStatusDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "The organization’s subscription and what it may do under it",
+        "tags": [
+          "Billing"
+        ]
+      }
+    },
+    "/api/v1/organizations/{organizationId}/billing/checkout-sessions": {
+      "post": {
+        "description": "For people holding `billing:manage` (owners and admins). Answers the URL of the provider’s checkout page. The card is collected even for the free trial, which only the organization’s first subscription gets, and is charged when it ends. An organization with a live subscription changes it in the billing portal instead (409).",
+        "operationId": "OrganizationBillingController_startCheckout_v1",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartCheckoutDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HostedSessionDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The plan is not offered, or not sold online"
+          },
+          "403": {
+            "description": "Missing permission, or (with `code: sandbox_claim_required`) the workspace is an unclaimed sandbox account an AI agent opened: the user must claim it from the emailed link first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SandboxRestrictedErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Billing is not enabled on this instance (self-hosted), or the organization is unknown."
+          },
+          "409": {
+            "description": "The organization already has a live subscription"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Start a subscription: a checkout page for a plan and interval",
+        "tags": [
+          "Billing"
+        ]
+      }
+    },
+    "/api/v1/organizations/{organizationId}/billing/portal-sessions": {
+      "post": {
+        "description": "For people holding `billing:manage`. Answers the URL of the provider’s portal, where the plan, interval and card are changed, the subscription canceled, and invoices downloaded.",
+        "operationId": "OrganizationBillingController_openPortal_v1",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HostedSessionDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Billing is not enabled on this instance (self-hosted), or the organization is unknown."
+          },
+          "409": {
+            "description": "The organization has not chosen a plan yet"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Open the billing portal",
+        "tags": [
+          "Billing"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspaceId}/billing-access": {
+      "get": {
+        "description": "For anyone in the workspace, including API keys and agents. While `writable` is false and `enforced` is true, changes answer 402 `subscription_inactive`: ask a billing admin of the organization (owners and admins) to fix the subscription.",
+        "operationId": "WorkspaceBillingAccessController_get_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionAccessDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Whether the workspace can be changed under its organization’s subscription",
+        "tags": [
+          "Billing"
         ]
       }
     },
@@ -1292,6 +1534,16 @@
                 }
               }
             }
+          },
+          "403": {
+            "description": "Missing permission, or (with `code: sandbox_claim_required`) the workspace is an unclaimed sandbox account an AI agent opened: the user must claim it from the emailed link first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SandboxRestrictedErrorDto"
+                }
+              }
+            }
           }
         },
         "summary": "Create a product with its variants",
@@ -1386,6 +1638,54 @@
           "Catalog"
         ]
       },
+      "patch": {
+        "description": "Changes only the fields sent; variants, prices, stock and images stay as they are. Connected stores are updated like after any content edit.",
+        "operationId": "ProductsController_updateContent_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProductContentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Edit a product’s title or description",
+        "tags": [
+          "Catalog"
+        ]
+      },
       "delete": {
         "operationId": "ProductsController_delete_v1",
         "parameters": [
@@ -1412,6 +1712,67 @@
           }
         },
         "summary": "Delete a product, its variants and their stock",
+        "tags": [
+          "Catalog"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspaceId}/products/{productId}/variants/{variantId}": {
+      "patch": {
+        "description": "Changes only the prices sent; the rest of the product stays as it is. Connected stores are updated like after any price edit. A null compare-at price removes it.",
+        "operationId": "ProductsController_updateVariantPrice_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "variantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateVariantPriceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Change one variant’s price or compare-at price",
         "tags": [
           "Catalog"
         ]
@@ -1612,6 +1973,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CatalogImportResultDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing permission, or (with `code: sandbox_claim_required`) the workspace is an unclaimed sandbox account an AI agent opened: the user must claim it from the emailed link first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SandboxRestrictedErrorDto"
                 }
               }
             }
@@ -2174,6 +2545,45 @@
         ]
       }
     },
+    "/api/v1/workspaces/{workspaceId}/inventory-items/{inventoryItemId}": {
+      "get": {
+        "operationId": "InventoryItemsController_get_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "inventoryItemId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryItemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "One variant’s stock, with its product",
+        "tags": [
+          "Inventory"
+        ]
+      }
+    },
     "/api/v1/workspaces/{workspaceId}/inventory-items/{inventoryItemId}/adjustments": {
       "post": {
         "description": "Adds or removes units, or sets the counted stock, and records the change in the ledger with its reason and author. Reserved units are not changed.",
@@ -2385,11 +2795,28 @@
             }
           },
           "402": {
-            "description": "The organization’s plan does not allow this (`ENTITLEMENTS_ENFORCED` is on). `code` and `feature` say why; upgrading the plan resolves it.",
+            "description": "The organization’s plan does not allow this (`ENTITLEMENTS_ENFORCED` is on). `code` and `feature` say why; upgrading the plan resolves it. Where billing is on, `code: subscription_inactive` means the organization is read-only until a billing admin fixes its subscription (`state` says why).",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PlanLimitErrorDto"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/PlanLimitErrorDto"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SubscriptionInactiveErrorDto"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing permission, or (with `code: sandbox_claim_required`) the workspace is an unclaimed sandbox account an AI agent opened: the user must claim it from the emailed link first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SandboxRestrictedErrorDto"
                 }
               }
             }
@@ -3096,11 +3523,28 @@
             }
           },
           "402": {
-            "description": "The organization’s plan does not allow this (`ENTITLEMENTS_ENFORCED` is on). `code` and `feature` say why; upgrading the plan resolves it.",
+            "description": "The organization’s plan does not allow this (`ENTITLEMENTS_ENFORCED` is on). `code` and `feature` say why; upgrading the plan resolves it. Where billing is on, `code: subscription_inactive` means the organization is read-only until a billing admin fixes its subscription (`state` says why).",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PlanLimitErrorDto"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/PlanLimitErrorDto"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SubscriptionInactiveErrorDto"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing permission, or (with `code: sandbox_claim_required`) the workspace is an unclaimed sandbox account an AI agent opened: the user must claim it from the emailed link first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SandboxRestrictedErrorDto"
                 }
               }
             }
@@ -3216,11 +3660,28 @@
             }
           },
           "402": {
-            "description": "The organization’s plan does not allow this (`ENTITLEMENTS_ENFORCED` is on). `code` and `feature` say why; upgrading the plan resolves it.",
+            "description": "The organization’s plan does not allow this (`ENTITLEMENTS_ENFORCED` is on). `code` and `feature` say why; upgrading the plan resolves it. Where billing is on, `code: subscription_inactive` means the organization is read-only until a billing admin fixes its subscription (`state` says why).",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PlanLimitErrorDto"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/PlanLimitErrorDto"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SubscriptionInactiveErrorDto"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing permission, or (with `code: sandbox_claim_required`) the workspace is an unclaimed sandbox account an AI agent opened: the user must claim it from the emailed link first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SandboxRestrictedErrorDto"
                 }
               }
             }
@@ -3391,11 +3852,28 @@
             }
           },
           "402": {
-            "description": "The organization’s plan does not allow this (`ENTITLEMENTS_ENFORCED` is on). `code` and `feature` say why; upgrading the plan resolves it.",
+            "description": "The organization’s plan does not allow this (`ENTITLEMENTS_ENFORCED` is on). `code` and `feature` say why; upgrading the plan resolves it. Where billing is on, `code: subscription_inactive` means the organization is read-only until a billing admin fixes its subscription (`state` says why).",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PlanLimitErrorDto"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/PlanLimitErrorDto"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SubscriptionInactiveErrorDto"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing permission, or (with `code: sandbox_claim_required`) the workspace is an unclaimed sandbox account an AI agent opened: the user must claim it from the emailed link first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SandboxRestrictedErrorDto"
                 }
               }
             }
@@ -3645,11 +4123,28 @@
             }
           },
           "402": {
-            "description": "The organization’s plan does not allow this (`ENTITLEMENTS_ENFORCED` is on). `code` and `feature` say why; upgrading the plan resolves it.",
+            "description": "The organization’s plan does not allow this (`ENTITLEMENTS_ENFORCED` is on). `code` and `feature` say why; upgrading the plan resolves it. Where billing is on, `code: subscription_inactive` means the organization is read-only until a billing admin fixes its subscription (`state` says why).",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PlanLimitErrorDto"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/PlanLimitErrorDto"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SubscriptionInactiveErrorDto"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing permission, or (with `code: sandbox_claim_required`) the workspace is an unclaimed sandbox account an AI agent opened: the user must claim it from the emailed link first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SandboxRestrictedErrorDto"
                 }
               }
             }
@@ -4777,11 +5272,28 @@
             }
           },
           "402": {
-            "description": "The organization’s plan does not allow this (`ENTITLEMENTS_ENFORCED` is on). `code` and `feature` say why; upgrading the plan resolves it.",
+            "description": "The organization’s plan does not allow this (`ENTITLEMENTS_ENFORCED` is on). `code` and `feature` say why; upgrading the plan resolves it. Where billing is on, `code: subscription_inactive` means the organization is read-only until a billing admin fixes its subscription (`state` says why).",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PlanLimitErrorDto"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/PlanLimitErrorDto"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SubscriptionInactiveErrorDto"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing permission, or (with `code: sandbox_claim_required`) the workspace is an unclaimed sandbox account an AI agent opened: the user must claim it from the emailed link first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SandboxRestrictedErrorDto"
                 }
               }
             }
@@ -4832,11 +5344,28 @@
             }
           },
           "402": {
-            "description": "The organization’s plan does not allow this (`ENTITLEMENTS_ENFORCED` is on). `code` and `feature` say why; upgrading the plan resolves it.",
+            "description": "The organization’s plan does not allow this (`ENTITLEMENTS_ENFORCED` is on). `code` and `feature` say why; upgrading the plan resolves it. Where billing is on, `code: subscription_inactive` means the organization is read-only until a billing admin fixes its subscription (`state` says why).",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PlanLimitErrorDto"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/PlanLimitErrorDto"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SubscriptionInactiveErrorDto"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing permission, or (with `code: sandbox_claim_required`) the workspace is an unclaimed sandbox account an AI agent opened: the user must claim it from the emailed link first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SandboxRestrictedErrorDto"
                 }
               }
             }
@@ -4848,6 +5377,621 @@
         "summary": "Rewrite a product’s title or description with AI, right away",
         "tags": [
           "AI"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspaceId}/agent-worker/conversations": {
+      "get": {
+        "operationId": "AgentWorkerController_list_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "1-based page number, for tables with page numbers. It wins over `cursor`.",
+            "schema": {
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentWorkerConversationPageDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Your Agent Worker conversations, most recently active first",
+        "tags": [
+          "Agent Worker"
+        ]
+      },
+      "post": {
+        "operationId": "AgentWorkerController_create_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAgentWorkerConversationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentWorkerConversationDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Start a conversation with Agent Worker",
+        "tags": [
+          "Agent Worker"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspaceId}/agent-worker/conversations/{conversationId}": {
+      "get": {
+        "description": "Answers 404 for an unknown id and for anyone else’s conversation.",
+        "operationId": "AgentWorkerController_get_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "conversationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentWorkerConversationDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "A conversation with its messages, tool calls and proposed changes",
+        "tags": [
+          "Agent Worker"
+        ]
+      },
+      "delete": {
+        "operationId": "AgentWorkerController_delete_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "conversationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "summary": "Delete a conversation, with its messages and proposed changes",
+        "tags": [
+          "Agent Worker"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspaceId}/agent-worker/conversations/{conversationId}/messages": {
+      "post": {
+        "description": "Agent Worker reads what it needs right away and proposes changes, which wait for `POST …/decision`. Changes still waiting are dropped (expired) by a new message. Each model call uses one AI credit: answers 402 when the plan has none left (while plans are enforced), 403 in an unclaimed sandbox, 409 while a turn runs, 429 past the rate limit, and 503 while AI is not configured. A read-only subscription still allows reading; Agent Worker then proposes no changes.",
+        "operationId": "AgentWorkerController_sendMessage_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "conversationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendAgentWorkerMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A stream of server-sent events, one `AgentWorkerStreamEventDto` per event as JSON in its `data` field (the event name is the `type`). It starts with `turn_started` and ends with `turn_finished`; the turn status there says how it ended.",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentWorkerStreamEventDto"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "The organization’s plan does not allow this (`ENTITLEMENTS_ENFORCED` is on). `code` and `feature` say why; upgrading the plan resolves it. Where billing is on, `code: subscription_inactive` means the organization is read-only until a billing admin fixes its subscription (`state` says why).",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/PlanLimitErrorDto"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SubscriptionInactiveErrorDto"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing permission, or (with `code: sandbox_claim_required`) the workspace is an unclaimed sandbox account an AI agent opened: the user must claim it from the emailed link first.",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/SandboxRestrictedErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Crossmart Agent is getting too many requests in this workspace. Wait a minute and try again."
+          }
+        },
+        "summary": "Send a message and stream Agent Worker’s turn",
+        "tags": [
+          "Agent Worker"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspaceId}/agent-worker/conversations/{conversationId}/decision": {
+      "post": {
+        "description": "Approves the listed actions and rejects every other waiting one, in one step. Approved changes are made through the API as \"Agent Worker on behalf of\" you, then Agent Worker goes on with their results. Actions with `risks` (deletions, price changes, bulk changes) also need `confirmHighRisk`: 400 without it. 409 when nothing waits or a turn runs.",
+        "operationId": "AgentWorkerController_decide_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "conversationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecideAgentWorkerActionsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A stream of server-sent events, one `AgentWorkerStreamEventDto` per event as JSON in its `data` field (the event name is the `type`). It starts with `turn_started` and ends with `turn_finished`; the turn status there says how it ended.",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentWorkerStreamEventDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Crossmart Agent is getting too many requests in this workspace. Wait a minute and try again."
+          }
+        },
+        "summary": "Approve or reject the changes waiting in a conversation, and stream the result",
+        "tags": [
+          "Agent Worker"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspaceId}/agent-worker/conversations/{conversationId}/cancel": {
+      "post": {
+        "description": "The model call is aborted; what already ran stays, and nothing more runs.",
+        "operationId": "AgentWorkerController_cancel_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "conversationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentWorkerCancelResultDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Stop the running turn",
+        "tags": [
+          "Agent Worker"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspaceId}/agent-proposals": {
+      "post": {
+        "description": "For connected agents and MCP sessions. Takes an MCP write tool and its input. When the workspace approves agents’ changes, it stores a proposal for the seller and answers `proposed`; otherwise it answers `apply_directly` and stores nothing. 400 for a read tool, an unknown one or invalid input; 403 when the caller could not make the change.",
+        "operationId": "AgentProposalsController_propose_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProposeAgentChangeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentProposalSubmissionDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Propose a change as an outside agent",
+        "tags": [
+          "Agent proposals"
+        ]
+      },
+      "get": {
+        "operationId": "AgentProposalsController_list_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/AgentProposalStatus"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "1-based page number, for tables with page numbers. It wins over `cursor`.",
+            "schema": {
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentProposalPageDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Outside agents’ proposals, newest first (signed-in people)",
+        "tags": [
+          "Agent proposals"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspaceId}/agent-proposals/summary": {
+      "get": {
+        "operationId": "AgentProposalsController_summary_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentProposalSummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "How many proposals wait for a decision (signed-in people)",
+        "tags": [
+          "Agent proposals"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspaceId}/agent-proposals/{proposalId}": {
+      "get": {
+        "description": "People need suggestions:view. An agent or key reads only proposals it made; any other id answers 404.",
+        "operationId": "AgentProposalsController_get_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "proposalId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentProposalDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "One proposal and where it stands",
+        "tags": [
+          "Agent proposals"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspaceId}/agent-proposals/{proposalId}/approve": {
+      "post": {
+        "description": "Needs the permission the change itself needs too. A proposal with risks needs `confirmHighRisk`. 409 when it no longer waits (decided or expired).",
+        "operationId": "AgentProposalsController_approve_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "proposalId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecideAgentProposalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentProposalDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Approve a proposal: the change is made as the agent, approved by you",
+        "tags": [
+          "Agent proposals"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspaceId}/agent-proposals/{proposalId}/reject": {
+      "post": {
+        "operationId": "AgentProposalsController_reject_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "proposalId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentProposalDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Reject a proposal; nothing changes and the agent reads `rejected`",
+        "tags": [
+          "Agent proposals"
         ]
       }
     },
@@ -5004,7 +6148,7 @@
     },
     "/api/v1/ask": {
       "post": {
-        "description": "Answers from Crossmart’s public documentation and plan lineup only, citing the pages it used. When they do not answer the question, `outcome` is `unknown` and the answer points to the support address. It never sees or changes any account or workspace data. No credentials are needed: anonymous callers may ask 5 questions a minute and 50 a day per IP address; with an API key, session or agent token, 20 a minute and 500 a day. Answers 429 past those, and 503 when AI is not configured or the platform’s daily question budget is spent.",
+        "description": "Answers from Crossmart’s public documentation and plan lineup, citing the pages it used. When they do not answer the question, `outcome` is `unknown` and the answer points to the support address. Send the returned `conversationId` with a follow-up question to continue the conversation. With an API key, an agent token, or a session and a `workspaceId`, it can also look up that workspace (listings, plan and usage, stores) to answer, read-only and within the caller’s permissions; it never changes anything. When a person can help, `escalation.offered` is true (see `POST /api/v1/ask/escalations`). Questions and answers are stored, with secrets redacted, for 180 days. No credentials are needed: anonymous callers may ask 5 questions a minute and 50 a day per IP address; with an API key, session or agent token, 20 a minute and 500 a day. Answers 429 past those, and 503 when AI is not configured or the platform’s daily question budget is spent.",
         "operationId": "AskController_ask_v1",
         "parameters": [],
         "requestBody": {
@@ -5028,6 +6172,9 @@
               }
             }
           },
+          "404": {
+            "description": "The conversation expired or is not yours, or the workspace is not yours"
+          },
           "429": {
             "description": "Too many questions from you. Wait a little and try again, or browse https://docs.crossmart.io."
           },
@@ -5050,6 +6197,258 @@
         "summary": "Ask a question about Crossmart",
         "tags": [
           "Ask Crossmart"
+        ]
+      }
+    },
+    "/api/v1/ask/escalations": {
+      "post": {
+        "description": "Hands your conversation with Ask Crossmart to the Crossmart team, who get it by email. Their reply goes to `contactEmail`, is POSTed to `callbackUrl` (signed like webhooks, with the `callbackSecret` returned here), and can be read with `GET /api/v1/ask/escalations/{id}`. Only the caller who had the conversation can escalate it, 5 times a day at most.",
+        "operationId": "AskEscalationsController_open_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAskEscalationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenedAskEscalationDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The callback URL is not a public https URL"
+          },
+          "404": {
+            "description": "The conversation expired or is not yours"
+          },
+          "429": {
+            "description": "Too many escalations today"
+          }
+        },
+        "security": [
+          {},
+          {
+            "bearer": []
+          },
+          {
+            "cookie": []
+          },
+          {
+            "api_key": []
+          }
+        ],
+        "summary": "Ask for a person",
+        "tags": [
+          "Ask Crossmart"
+        ]
+      }
+    },
+    "/api/v1/ask/escalations/{escalationId}": {
+      "get": {
+        "description": "Its status and, once the team answered, the reply. The ticket id returned when the escalation was opened is the only credential needed.",
+        "operationId": "AskEscalationsController_get_v1",
+        "parameters": [
+          {
+            "name": "escalationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AskEscalationDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No escalation has this id"
+          }
+        },
+        "security": [
+          {},
+          {
+            "bearer": []
+          },
+          {
+            "cookie": []
+          },
+          {
+            "api_key": []
+          }
+        ],
+        "summary": "Read an escalation",
+        "tags": [
+          "Ask Crossmart"
+        ]
+      }
+    },
+    "/api/v1/sandbox-accounts": {
+      "post": {
+        "description": "For AI agents: no credentials needed. Opens an account for `email` with a workspace named `storeName`, returns an Editor API key for it, and emails the person a link to claim it. Until claimed it is a sandbox: products (at most 100), stock and drafts work, but connecting stores, publishing, inviting people and Crossmart AI answer 403 `sandbox_claim_required`. Unclaimed accounts are deleted after 14 days. When the address already has an account, nothing is created and no email is sent, and the answer is the same whoever owns it: `sign_in_required`. At most 5 calls an hour and 50 a day per caller address; 429 past those.",
+        "operationId": "SandboxAccountsController_create_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSandboxAccountDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SandboxAccountDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many sandbox accounts opened from here. Ask the user to sign up at https://app.crossmart.io, or try again later."
+          }
+        },
+        "summary": "Open a sandbox account for someone without one",
+        "tags": [
+          "Sandbox accounts"
+        ]
+      }
+    },
+    "/api/v1/sandbox-claims/preview": {
+      "post": {
+        "description": "Open to anyone with the link, so the claim page can show it before signing in.",
+        "operationId": "SandboxClaimsController_preview_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SandboxClaimTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SandboxClaimPreviewDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The link is unknown, used or expired"
+          }
+        },
+        "summary": "What a claim link is for",
+        "tags": [
+          "Sandbox accounts"
+        ]
+      }
+    },
+    "/api/v1/sandbox-claims": {
+      "post": {
+        "description": "Sets the password the person signs in with and makes the workspace a normal one. The link works once. Sign in with the returned email and the password afterwards. 409 when the person already has a password: they sign in and claim from the app instead.",
+        "operationId": "SandboxClaimsController_claim_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClaimSandboxDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimedSandboxDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The link is unknown, used or expired"
+          },
+          "409": {
+            "description": "The account has a password already; sign in to claim it"
+          }
+        },
+        "summary": "Claim a sandbox account with a new password",
+        "tags": [
+          "Sandbox accounts"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspaceId}/sandbox/claim": {
+      "post": {
+        "description": "For the person the sandbox was opened for, signed in (a password reset link is the only other way in, and it proves the address too). Makes the workspace a normal one. API keys and agents get 403; anyone else, or a workspace with nothing to claim, 404.",
+        "operationId": "WorkspaceSandboxController_claim_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimedSandboxDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing here for you to claim"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Claim this sandbox account as its owner",
+        "tags": [
+          "Sandbox accounts"
         ]
       }
     },
@@ -5124,11 +6523,18 @@
             "description": "The URL is not https (in production), or not a public address"
           },
           "402": {
-            "description": "The organization’s plan does not allow this (`ENTITLEMENTS_ENFORCED` is on). `code` and `feature` say why; upgrading the plan resolves it.",
+            "description": "The organization’s plan does not allow this (`ENTITLEMENTS_ENFORCED` is on). `code` and `feature` say why; upgrading the plan resolves it. Where billing is on, `code: subscription_inactive` means the organization is read-only until a billing admin fixes its subscription (`state` says why).",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PlanLimitErrorDto"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/PlanLimitErrorDto"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SubscriptionInactiveErrorDto"
+                    }
+                  ]
                 }
               }
             }
@@ -5540,12 +6946,120 @@
           "Webhooks"
         ]
       }
+    },
+    "/api/v1/workspaces/{workspaceId}/events": {
+      "get": {
+        "description": "Without `after`, the latest events. Poll with the `cursor` of the previous page to follow the workspace without a stream; the newest second or two is held back so nothing is skipped. 400 for a cursor this API did not give out.",
+        "operationId": "WorkspaceEventsController_list_v1",
+        "parameters": [
+          {
+            "name": "after",
+            "required": false,
+            "in": "query",
+            "description": "The `cursor` of a previous page or event: only what happened after it. Without it, the latest events.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50,
+              "type": "number"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceEventPageDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests for the event stream. Wait a minute and try again."
+          }
+        },
+        "summary": "What happened in the workspace, oldest first, after a cursor",
+        "tags": [
+          "Events"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspaceId}/events/stream": {
+      "get": {
+        "description": "Server-sent events. Each `workspace_event` carries one `WorkspaceEventDto` as JSON, with its `cursor` as the event id. Without a cursor the stream starts with the latest events. `ready` (its id is the cursor) says the backlog is out. A comment every 15 seconds keeps the connection open; the stream ends after 10 minutes, and the client reconnects with `Last-Event-ID` to go on where it was.",
+        "operationId": "WorkspaceEventsController_stream_v1",
+        "parameters": [
+          {
+            "name": "after",
+            "required": false,
+            "in": "query",
+            "description": "The `cursor` of a previous page or event: only what happened after it. Without it, the latest events.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "last-event-id",
+            "in": "header",
+            "description": "Sent by a reconnecting client: go on after this event. Wins over `after`.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Server-sent events. Each `workspace_event` carries one `WorkspaceEventDto` as JSON, with its `cursor` as the event id. Without a cursor the stream starts with the latest events. `ready` (its id is the cursor) says the backlog is out. A comment every 15 seconds keeps the connection open; the stream ends after 10 minutes, and the client reconnects with `Last-Event-ID` to go on where it was.",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceEventDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests for the event stream. Wait a minute and try again."
+          }
+        },
+        "summary": "Follow the workspace as it happens, as server-sent events",
+        "tags": [
+          "Events"
+        ]
+      }
     }
   },
   "info": {
     "title": "Crossmart API",
     "description": "REST API of Crossmart, the open-source multichannel platform for sellers and their AI agents.",
-    "version": "0.0.0",
+    "version": "0.1.0",
     "contact": {},
     "license": {
       "name": "AGPL-3.0",
@@ -5579,6 +7093,27 @@
       }
     },
     "schemas": {
+      "SandboxStateDto": {
+        "type": "object",
+        "properties": {
+          "claimExpiresAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the claim link stops working and the account is deleted"
+          }
+        },
+        "required": [
+          "claimExpiresAt"
+        ]
+      },
+      "OutsideAgentChanges": {
+        "type": "string",
+        "enum": [
+          "require_approval",
+          "apply_directly"
+        ],
+        "description": "What happens to changes by outside AI agents (OAuth agents and MCP sessions): `require_approval` (the default) makes each one a proposal to approve; `apply_directly` makes them at once. API keys over REST always apply directly."
+      },
       "WorkspaceRole": {
         "type": "string",
         "enum": [
@@ -5630,7 +7165,9 @@
           "suggestions:view",
           "suggestions:approve",
           "billing:view",
-          "ai:generate"
+          "billing:manage",
+          "ai:generate",
+          "agent_worker:use"
         ],
         "description": "What your role lets you do here. Check these, not the role, to adapt a UI."
       },
@@ -5666,6 +7203,24 @@
             "example": "Asia/Jerusalem",
             "description": "IANA time zone that reports follow; null until set"
           },
+          "sandbox": {
+            "nullable": true,
+            "description": "Set while the workspace is an unclaimed sandbox account an AI agent opened: it cannot connect stores, publish or invite people until claimed. Null for every other workspace.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SandboxStateDto"
+              }
+            ]
+          },
+          "outsideAgentChanges": {
+            "description": "What happens to changes by outside AI agents (OAuth agents and MCP sessions): `require_approval` (the default) makes each one a proposal to approve; `apply_directly` makes them at once. API keys over REST always apply directly.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OutsideAgentChanges"
+              }
+            ]
+          },
           "role": {
             "description": "Your role here",
             "allOf": [
@@ -5700,6 +7255,8 @@
           "slug",
           "currency",
           "timeZone",
+          "sandbox",
+          "outsideAgentChanges",
           "role",
           "customRole",
           "permissions"
@@ -5723,13 +7280,18 @@
             "items": {
               "$ref": "#/components/schemas/WorkspaceDto"
             }
+          },
+          "platformAdmin": {
+            "type": "boolean",
+            "description": "Whether the user runs this instance (`PLATFORM_ADMIN_EMAILS`, verified): they can read Ask Crossmart’s conversations and answer escalations"
           }
         },
         "required": [
           "id",
           "name",
           "email",
-          "workspaces"
+          "workspaces",
+          "platformAdmin"
         ]
       },
       "UpdateWorkspaceDto": {
@@ -5744,6 +7306,14 @@
             "type": "string",
             "example": "Asia/Jerusalem",
             "description": "IANA time zone where the workspace’s day starts, for reports, such as Asia/Jerusalem"
+          },
+          "outsideAgentChanges": {
+            "description": "Whether outside agents' changes wait for approval. Only a signed-in person may change it; an API key or agent gets 403. Recorded in the activity log.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OutsideAgentChanges"
+              }
+            ]
           }
         }
       },
@@ -5760,35 +7330,13 @@
           "confirmName"
         ]
       },
-      "CreateWorkspaceDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "example": "EU store",
-            "maxLength": 200
-          },
-          "currency": {
-            "type": "string",
-            "example": "EUR",
-            "default": "USD",
-            "description": "ISO 4217 code of the catalog prices. It cannot change later."
-          },
-          "timeZone": {
-            "type": "string",
-            "example": "Europe/Berlin",
-            "description": "IANA time zone where the workspace’s day starts, for reports, such as Asia/Jerusalem"
-          }
-        },
-        "required": [
-          "name"
-        ]
-      },
       "EntitlementErrorCode": {
         "type": "string",
         "enum": [
           "plan_limit_reached",
-          "plan_feature_not_included"
+          "plan_feature_not_included",
+          "sandbox_claim_required",
+          "subscription_inactive"
         ]
       },
       "Feature": {
@@ -5862,6 +7410,142 @@
           "limit",
           "usage",
           "requested"
+        ]
+      },
+      "SubscriptionAccessState": {
+        "type": "string",
+        "enum": [
+          "unrestricted",
+          "sandbox",
+          "trialing",
+          "active",
+          "past_due_grace",
+          "legacy",
+          "subscription_required",
+          "past_due",
+          "canceled",
+          "unpaid",
+          "paused"
+        ]
+      },
+      "SubscriptionInactiveErrorDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 402
+          },
+          "error": {
+            "type": "string",
+            "example": "Payment Required"
+          },
+          "code": {
+            "example": "subscription_inactive",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntitlementErrorCode"
+              }
+            ]
+          },
+          "message": {
+            "type": "string",
+            "example": "This organization's Crossmart subscription is canceled, so the account is read-only: data can be read, but not changed, published or synced. Ask an owner or admin of the organization to choose a plan in Settings > Billing."
+          },
+          "state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SubscriptionAccessState"
+              }
+            ]
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "code",
+          "message",
+          "state"
+        ]
+      },
+      "CreateWorkspaceDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "EU store",
+            "maxLength": 200
+          },
+          "currency": {
+            "type": "string",
+            "example": "EUR",
+            "default": "USD",
+            "description": "ISO 4217 code of the catalog prices. It cannot change later."
+          },
+          "timeZone": {
+            "type": "string",
+            "example": "Europe/Berlin",
+            "description": "IANA time zone where the workspace’s day starts, for reports, such as Asia/Jerusalem"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "SandboxRestriction": {
+        "type": "string",
+        "enum": [
+          "connect_channel",
+          "publish",
+          "invite_member",
+          "create_workspace",
+          "generate_content",
+          "add_products",
+          "subscribe"
+        ]
+      },
+      "SandboxRestrictedErrorDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 403
+          },
+          "error": {
+            "type": "string",
+            "example": "Forbidden"
+          },
+          "code": {
+            "example": "sandbox_claim_required",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntitlementErrorCode"
+              }
+            ]
+          },
+          "message": {
+            "type": "string",
+            "example": "This Crossmart account is an unclaimed sandbox, so it cannot connect a store. Ask the user to claim it with the link Crossmart emailed them (it works until 2026-11-21). Once claimed, you can connect a store."
+          },
+          "restriction": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SandboxRestriction"
+              }
+            ]
+          },
+          "claimExpiresAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the claim link stops working and the sandbox is deleted"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "code",
+          "message",
+          "restriction",
+          "claimExpiresAt"
         ]
       },
       "WorkspaceMemberDto": {
@@ -6376,7 +8060,10 @@
           "ACTIVE",
           "TRIALING",
           "PAST_DUE",
-          "CANCELED"
+          "CANCELED",
+          "INCOMPLETE",
+          "UNPAID",
+          "PAUSED"
         ]
       },
       "FeatureKind": {
@@ -6470,6 +8157,298 @@
           "currentPeriodEnd",
           "enforced",
           "features"
+        ]
+      },
+      "PlanGrantDto": {
+        "type": "object",
+        "properties": {
+          "feature": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Feature"
+              }
+            ]
+          },
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FeatureKind"
+              }
+            ]
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether the plan includes the feature"
+          },
+          "limit": {
+            "type": "number",
+            "nullable": true,
+            "description": "How many the plan allows; null is unlimited, 0 is not included"
+          }
+        },
+        "required": [
+          "feature",
+          "kind",
+          "enabled",
+          "limit"
+        ]
+      },
+      "BillingInterval": {
+        "type": "string",
+        "enum": [
+          "MONTHLY",
+          "ANNUAL"
+        ]
+      },
+      "PlanPriceDto": {
+        "type": "object",
+        "properties": {
+          "interval": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BillingInterval"
+              }
+            ]
+          },
+          "amount": {
+            "type": "number",
+            "example": 27600,
+            "description": "Each charge, in the currency’s minor unit (cents)"
+          },
+          "monthlyAmount": {
+            "type": "number",
+            "example": 2300,
+            "description": "The charge spread over the months it covers, in minor units, to compare intervals"
+          },
+          "currency": {
+            "type": "string",
+            "example": "usd",
+            "description": "Lower-case ISO 4217 code"
+          }
+        },
+        "required": [
+          "interval",
+          "amount",
+          "monthlyAmount",
+          "currency"
+        ]
+      },
+      "BillingPlanDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "growth"
+          },
+          "name": {
+            "type": "string",
+            "example": "Growth"
+          },
+          "version": {
+            "type": "number",
+            "description": "The plan version new subscriptions get"
+          },
+          "features": {
+            "description": "What the plan includes, every feature",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanGrantDto"
+            }
+          },
+          "prices": {
+            "description": "Monthly first; empty for a plan that is not sold online",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanPriceDto"
+            }
+          },
+          "selfServe": {
+            "type": "boolean",
+            "description": "False for plans sold by contacting sales, such as Enterprise"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "version",
+          "features",
+          "prices",
+          "selfServe"
+        ]
+      },
+      "BillingPlanCatalogDto": {
+        "type": "object",
+        "properties": {
+          "plans": {
+            "description": "The offered plans, in order",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillingPlanDto"
+            }
+          },
+          "salesEmail": {
+            "type": "string",
+            "example": "hello@crossmart.io",
+            "description": "Where to ask about other plans"
+          }
+        },
+        "required": [
+          "plans",
+          "salesEmail"
+        ]
+      },
+      "SubscriptionAccessDto": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "description": "`unrestricted` where billing is off; `trialing`, `active`, `past_due_grace`, `legacy` and `sandbox` keep full access; the others are read-only while billing is enforced",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SubscriptionAccessState"
+              }
+            ]
+          },
+          "writable": {
+            "type": "boolean",
+            "description": "False when the organization is read-only. Changes are refused (402 `subscription_inactive`) only while `enforced` is true"
+          },
+          "enforced": {
+            "type": "boolean",
+            "description": "Whether a read-only organization is refused changes on this instance"
+          },
+          "until": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When the state ends on its own: the trial, the past-due grace period, or access for organizations from before billing. Null when it does not"
+          },
+          "cancelAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When a scheduled cancellation ends a subscription that still has access (during a trial, the trial end, and nothing is charged). Null when it renews, or has no access to lose"
+          }
+        },
+        "required": [
+          "state",
+          "writable",
+          "enforced",
+          "until",
+          "cancelAt"
+        ]
+      },
+      "BillingStatusDto": {
+        "type": "object",
+        "properties": {
+          "organizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether this instance bills customers; false when self-hosting, where all is free"
+          },
+          "plan": {
+            "$ref": "#/components/schemas/PlanDto"
+          },
+          "status": {
+            "description": "`INCOMPLETE` until a plan is chosen; `ACTIVE` with no billing account is an organization from before billing",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SubscriptionStatus"
+              }
+            ]
+          },
+          "interval": {
+            "nullable": true,
+            "description": "How often the subscription renews; null before one starts",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BillingInterval"
+              }
+            ]
+          },
+          "currentPeriodEnd": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When the current period ends: the subscription renews then, unless `cancelAt` is set"
+          },
+          "trialEnd": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When the trial ends, or ended. The card is charged then, unless `cancelAt` is set"
+          },
+          "cancelAtPeriodEnd": {
+            "type": "boolean",
+            "description": "Whether a cancellation is scheduled, so the subscription ends instead of renewing. Read `cancelAt` for when"
+          },
+          "cancelAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When a scheduled cancellation ends the subscription (during a trial, the trial end, and nothing is charged); null when it renews"
+          },
+          "access": {
+            "$ref": "#/components/schemas/SubscriptionAccessDto"
+          },
+          "hasBillingAccount": {
+            "type": "boolean",
+            "description": "Whether the billing portal can open (a plan was chosen before)"
+          },
+          "trialAvailable": {
+            "type": "boolean",
+            "description": "Whether choosing a plan now starts with a free trial"
+          }
+        },
+        "required": [
+          "organizationId",
+          "enabled",
+          "plan",
+          "status",
+          "interval",
+          "currentPeriodEnd",
+          "trialEnd",
+          "cancelAtPeriodEnd",
+          "cancelAt",
+          "access",
+          "hasBillingAccount",
+          "trialAvailable"
+        ]
+      },
+      "StartCheckoutDto": {
+        "type": "object",
+        "properties": {
+          "planCode": {
+            "type": "string",
+            "example": "growth",
+            "description": "The `code` of an offered, self-serve plan"
+          },
+          "interval": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BillingInterval"
+              }
+            ]
+          }
+        },
+        "required": [
+          "planCode",
+          "interval"
+        ]
+      },
+      "HostedSessionDto": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://checkout.stripe.com/c/pay/cs_test_…"
+          }
+        },
+        "required": [
+          "url"
         ]
       },
       "ProductStatus": {
@@ -7243,6 +9222,37 @@
           "variants"
         ]
       },
+      "UpdateProductContentDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "example": "Linen Shirt – Relaxed Fit"
+          },
+          "descriptionHtml": {
+            "type": "string",
+            "maxLength": 65535,
+            "description": "HTML; unsafe markup is removed"
+          }
+        }
+      },
+      "UpdateVariantPriceDto": {
+        "type": "object",
+        "properties": {
+          "price": {
+            "type": "string",
+            "example": "19.90",
+            "description": "In the workspace currency"
+          },
+          "compareAtPrice": {
+            "type": "string",
+            "nullable": true,
+            "example": "24.90",
+            "description": "The \"was\" price buyers see struck through; null removes it"
+          }
+        }
+      },
       "BulkProductAction": {
         "type": "string",
         "enum": [
@@ -7960,8 +9970,11 @@
           "member_removed",
           "member_left",
           "workspace_created",
+          "sandbox_created",
+          "sandbox_claimed",
           "workspace_renamed",
           "workspace_time_zone_changed",
+          "outside_agent_changes_changed",
           "custom_role_created",
           "custom_role_updated",
           "custom_role_deleted",
@@ -7985,11 +9998,14 @@
           "listing_item_specifics_changed",
           "channel_sync_requested",
           "listing_retry_requested",
+          "stock_reconciled",
+          "stock_sync_failed",
           "stock_oversold",
           "content_generation_requested",
           "content_generated",
           "suggestion_approved",
           "suggestion_rejected",
+          "agent_proposal_rejected",
           "suggestions_bulk_approved"
         ]
       },
@@ -8011,6 +10027,7 @@
           "member",
           "invitation",
           "workspace",
+          "agent_proposal",
           "custom_role",
           "channel_connection",
           "webhook_endpoint"
@@ -8064,6 +10081,17 @@
             "type": "string",
             "nullable": true,
             "description": "The agent's name, such as \"Claude\", for agent actions"
+          },
+          "approvedByUserId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "Who approved the outside agent's proposal that made this change; null when nobody had to"
+          },
+          "approvedByName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Their name, for \"Claude for Dana, approved by Lee\"; null when deleted or none"
           }
         },
         "required": [
@@ -8073,7 +10101,9 @@
           "agentClientId",
           "name",
           "email",
-          "agentName"
+          "agentName",
+          "approvedByUserId",
+          "approvedByName"
         ]
       },
       "ActivitySubjectDto": {
@@ -8150,6 +10180,12 @@
             "nullable": true,
             "description": "Why a failed action failed"
           },
+          "connectionId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The store (channel connection) it happened on, such as where a listing failed"
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string"
@@ -8164,6 +10200,7 @@
           "subject",
           "itemCount",
           "failureReason",
+          "connectionId",
           "createdAt"
         ]
       },
@@ -8460,6 +10497,7 @@
           "session_required",
           "channel_unavailable",
           "plan_limit_reached",
+          "sandbox_claim_required",
           "unexpected"
         ],
         "description": "Set when connecting failed"
@@ -12452,7 +14490,8 @@
         "enum": [
           "content_generation",
           "content_draft",
-          "ask"
+          "ask",
+          "agent_worker"
         ]
       },
       "AiUsageLineDto": {
@@ -12618,6 +14657,876 @@
           "descriptionHtml"
         ]
       },
+      "AgentWorkerEventType": {
+        "type": "string",
+        "enum": [
+          "turn_started",
+          "text_delta",
+          "message",
+          "tool_started",
+          "tool_finished",
+          "action_proposed",
+          "action_decided",
+          "turn_finished",
+          "error"
+        ]
+      },
+      "AgentWorkerTurnTrigger": {
+        "type": "string",
+        "enum": [
+          "message",
+          "decision"
+        ]
+      },
+      "AgentWorkerTurnStatus": {
+        "type": "string",
+        "enum": [
+          "running",
+          "completed",
+          "awaiting_approval",
+          "cancelled",
+          "failed"
+        ]
+      },
+      "AgentWorkerTurnDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "trigger": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AgentWorkerTurnTrigger"
+              }
+            ]
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AgentWorkerTurnStatus"
+              }
+            ]
+          },
+          "modelCalls": {
+            "type": "number",
+            "description": "Model calls so far; each uses one AI credit"
+          },
+          "inputTokens": {
+            "type": "number"
+          },
+          "outputTokens": {
+            "type": "number"
+          },
+          "failureReason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why it failed or stopped early"
+          },
+          "startedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "finishedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "trigger",
+          "status",
+          "modelCalls",
+          "inputTokens",
+          "outputTokens",
+          "failureReason",
+          "startedAt",
+          "finishedAt"
+        ]
+      },
+      "AgentWorkerRole": {
+        "type": "string",
+        "enum": [
+          "user",
+          "assistant"
+        ]
+      },
+      "AgentWorkerToolKind": {
+        "type": "string",
+        "enum": [
+          "read",
+          "write"
+        ]
+      },
+      "AgentWorkerActionStatus": {
+        "type": "string",
+        "enum": [
+          "running",
+          "succeeded",
+          "failed",
+          "proposed",
+          "refused",
+          "rejected",
+          "expired",
+          "cancelled",
+          "executing",
+          "executed",
+          "execution_failed"
+        ]
+      },
+      "AgentWorkerActionRisk": {
+        "type": "string",
+        "enum": [
+          "destructive",
+          "price_change",
+          "bulk"
+        ],
+        "description": "Why approving it also needs `confirmHighRisk`; empty for ordinary changes"
+      },
+      "AgentWorkerChangeDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "example": "Price (Medium)",
+            "description": "What changes, for people"
+          },
+          "before": {
+            "type": "string",
+            "nullable": true,
+            "description": "The value now; null when unknown"
+          },
+          "after": {
+            "type": "string",
+            "nullable": true,
+            "description": "The value after the change"
+          }
+        },
+        "required": [
+          "label",
+          "before",
+          "after"
+        ]
+      },
+      "AgentWorkerActionPreviewDto": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "type": "string",
+            "nullable": true,
+            "example": "Linen Shirt on Outlet store"
+          },
+          "headline": {
+            "type": "string",
+            "example": "Add 20 units (stock received)",
+            "description": "The change in one sentence"
+          },
+          "details": {
+            "description": "More lines to read, such as a note",
+            "example": [
+              "Note: Spring delivery"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "changes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentWorkerChangeDto"
+            }
+          }
+        },
+        "required": [
+          "target",
+          "headline",
+          "details",
+          "changes"
+        ]
+      },
+      "AgentWorkerActionTargetsDto": {
+        "type": "object",
+        "properties": {
+          "connectionIds": {
+            "description": "Stores (channel connections) the call names; empty for none",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "productIds": {
+            "description": "Products the call names",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "connectionIds",
+          "productIds"
+        ]
+      },
+      "AgentWorkerActionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "messageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "toolName": {
+            "type": "string",
+            "example": "retry_store_listing",
+            "description": "The MCP tool it calls"
+          },
+          "toolTitle": {
+            "type": "string",
+            "example": "Retry publishing a product to a store"
+          },
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AgentWorkerToolKind"
+              }
+            ]
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AgentWorkerActionStatus"
+              }
+            ]
+          },
+          "summary": {
+            "type": "string",
+            "example": "Override or revert fields of a listing: Linen Shirt on Outlet store"
+          },
+          "risks": {
+            "type": "array",
+            "description": "Why approving it also needs `confirmHighRisk`; empty for ordinary changes",
+            "items": {
+              "$ref": "#/components/schemas/AgentWorkerActionRisk"
+            }
+          },
+          "preview": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AgentWorkerActionPreviewDto"
+              }
+            ]
+          },
+          "targets": {
+            "description": "What the call reads or changes, so a map of the workspace can show it",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AgentWorkerActionTargetsDto"
+              }
+            ]
+          },
+          "outcome": {
+            "type": "string",
+            "nullable": true,
+            "example": "12 found"
+          },
+          "isError": {
+            "type": "boolean"
+          },
+          "untrustedWarning": {
+            "type": "boolean",
+            "description": "Text read in the same turn looked like instructions to an AI: review with care"
+          },
+          "decidedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "executedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "messageId",
+          "toolName",
+          "toolTitle",
+          "kind",
+          "status",
+          "summary",
+          "risks",
+          "preview",
+          "targets",
+          "outcome",
+          "isError",
+          "untrustedWarning",
+          "decidedAt",
+          "executedAt",
+          "createdAt"
+        ]
+      },
+      "AgentWorkerMessageDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "turnId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "role": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AgentWorkerRole"
+              }
+            ]
+          },
+          "text": {
+            "type": "string",
+            "description": "Plain text; the agent may use simple Markdown lists"
+          },
+          "actions": {
+            "description": "Tool calls of this answer",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentWorkerActionDto"
+            }
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "turnId",
+          "role",
+          "text",
+          "actions",
+          "createdAt"
+        ]
+      },
+      "AgentWorkerErrorCode": {
+        "type": "string",
+        "enum": [
+          "credits_exhausted",
+          "ai_unavailable",
+          "sandbox_claim_required",
+          "answer_unusable",
+          "internal"
+        ]
+      },
+      "AgentWorkerErrorDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AgentWorkerErrorCode"
+              }
+            ]
+          },
+          "message": {
+            "type": "string",
+            "description": "Safe to show to the person"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ]
+      },
+      "AgentWorkerStreamEventDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AgentWorkerEventType"
+              }
+            ]
+          },
+          "turn": {
+            "description": "turn_started, turn_finished",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AgentWorkerTurnDto"
+              }
+            ]
+          },
+          "delta": {
+            "type": "string",
+            "description": "text_delta: the next piece of the answer"
+          },
+          "message": {
+            "description": "message",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AgentWorkerMessageDto"
+              }
+            ]
+          },
+          "action": {
+            "description": "tool_started, tool_finished, action_proposed, action_decided",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AgentWorkerActionDto"
+              }
+            ]
+          },
+          "error": {
+            "description": "error",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AgentWorkerErrorDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "AgentWorkerConversationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string",
+            "example": "Fix my failed eBay listings"
+          },
+          "pendingActionCount": {
+            "type": "number",
+            "description": "Changes waiting for approval"
+          },
+          "lastActivityAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "pendingActionCount",
+          "lastActivityAt",
+          "createdAt"
+        ]
+      },
+      "AgentWorkerConversationPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "Most recently active first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentWorkerConversationDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ]
+      },
+      "CreateAgentWorkerConversationDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 80,
+            "description": "Taken from the first message when left out"
+          }
+        }
+      },
+      "AgentWorkerConversationDetailDto": {
+        "type": "object",
+        "properties": {
+          "conversation": {
+            "$ref": "#/components/schemas/AgentWorkerConversationDto"
+          },
+          "messages": {
+            "description": "Oldest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentWorkerMessageDto"
+            }
+          },
+          "activeTurn": {
+            "nullable": true,
+            "description": "The turn running or waiting for approval; null when the agent is idle",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AgentWorkerTurnDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "conversation",
+          "messages",
+          "activeTurn"
+        ]
+      },
+      "AgentWorkerContextView": {
+        "type": "string",
+        "enum": [
+          "channel_map",
+          "product_map",
+          "products",
+          "listings",
+          "orders",
+          "inventory"
+        ],
+        "description": "The page the person wrote from"
+      },
+      "AgentWorkerPageContextDto": {
+        "type": "object",
+        "properties": {
+          "view": {
+            "description": "The page the person wrote from",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AgentWorkerContextView"
+              }
+            ]
+          },
+          "productId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The product on screen"
+          },
+          "connectionId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The store on screen"
+          }
+        }
+      },
+      "SendAgentWorkerMessageDto": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000,
+            "example": "Fix my failed eBay listings"
+          },
+          "context": {
+            "description": "Where the person is in the app, so \"this product\" means something",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AgentWorkerPageContextDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "text"
+        ]
+      },
+      "DecideAgentWorkerActionsDto": {
+        "type": "object",
+        "properties": {
+          "approvedActionIds": {
+            "description": "The waiting actions to approve; every other waiting action of the conversation is rejected. Empty rejects them all.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "confirmHighRisk": {
+            "type": "boolean",
+            "default": false,
+            "description": "Required (true) to approve an action with `risks`: a deletion, a price change or a bulk change"
+          }
+        },
+        "required": [
+          "approvedActionIds"
+        ]
+      },
+      "AgentWorkerCancelResultDto": {
+        "type": "object",
+        "properties": {
+          "cancelled": {
+            "type": "boolean",
+            "description": "False when no turn was running"
+          }
+        },
+        "required": [
+          "cancelled"
+        ]
+      },
+      "ProposeAgentChangeDto": {
+        "type": "object",
+        "properties": {
+          "tool": {
+            "type": "string",
+            "example": "update_variant_price",
+            "maxLength": 100,
+            "description": "An MCP write tool, as the MCP server lists it"
+          },
+          "input": {
+            "type": "object",
+            "additionalProperties": true,
+            "example": {
+              "productId": "0193…",
+              "variantId": "0193…",
+              "price": "19.00"
+            },
+            "description": "The tool's input, as its MCP schema describes it"
+          }
+        },
+        "required": [
+          "tool",
+          "input"
+        ]
+      },
+      "AgentProposalOutcome": {
+        "type": "string",
+        "enum": [
+          "proposed",
+          "apply_directly"
+        ],
+        "description": "`proposed`: it waits for the seller. `apply_directly`: the workspace lets agents make changes at once, so make the call itself."
+      },
+      "AgentProposalStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "applying",
+          "applied",
+          "failed",
+          "rejected",
+          "expired"
+        ],
+        "description": "A pending proposal past its expiry reads as expired"
+      },
+      "AgentProposerKind": {
+        "type": "string",
+        "enum": [
+          "oauth_agent",
+          "api_key"
+        ]
+      },
+      "AgentProposalDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "toolName": {
+            "type": "string",
+            "example": "update_variant_price",
+            "description": "The MCP tool it calls"
+          },
+          "toolTitle": {
+            "type": "string",
+            "example": "Change a variant's price"
+          },
+          "status": {
+            "description": "A pending proposal past its expiry reads as expired",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AgentProposalStatus"
+              }
+            ]
+          },
+          "proposerKind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AgentProposerKind"
+              }
+            ]
+          },
+          "agentName": {
+            "type": "string",
+            "example": "Claude",
+            "description": "The agent; for an MCP session with a key, the key's name"
+          },
+          "onBehalfOfName": {
+            "type": "string",
+            "nullable": true,
+            "description": "The person the agent acts for"
+          },
+          "summary": {
+            "type": "string",
+            "example": "Change a variant's price: Linen Shirt"
+          },
+          "risks": {
+            "type": "array",
+            "description": "Why approving it also needs `confirmHighRisk`; empty for ordinary changes",
+            "items": {
+              "$ref": "#/components/schemas/AgentWorkerActionRisk"
+            }
+          },
+          "preview": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AgentWorkerActionPreviewDto"
+              }
+            ]
+          },
+          "targets": {
+            "$ref": "#/components/schemas/AgentWorkerActionTargetsDto"
+          },
+          "result": {
+            "type": "string",
+            "nullable": true,
+            "description": "The API's answer once applied, or why it was refused"
+          },
+          "isError": {
+            "type": "boolean",
+            "description": "True when the approved change was refused"
+          },
+          "decidedByName": {
+            "type": "string",
+            "nullable": true
+          },
+          "decidedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "finishedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When it expires if nobody decides"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "toolName",
+          "toolTitle",
+          "status",
+          "proposerKind",
+          "agentName",
+          "onBehalfOfName",
+          "summary",
+          "risks",
+          "preview",
+          "targets",
+          "result",
+          "isError",
+          "decidedByName",
+          "decidedAt",
+          "finishedAt",
+          "expiresAt",
+          "createdAt"
+        ]
+      },
+      "AgentProposalSubmissionDto": {
+        "type": "object",
+        "properties": {
+          "outcome": {
+            "description": "`proposed`: it waits for the seller. `apply_directly`: the workspace lets agents make changes at once, so make the call itself.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AgentProposalOutcome"
+              }
+            ]
+          },
+          "message": {
+            "type": "string",
+            "description": "What to do next, or to tell the user"
+          },
+          "proposal": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AgentProposalDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "outcome",
+          "message",
+          "proposal"
+        ]
+      },
+      "AgentProposalPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "Newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentProposalDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ]
+      },
+      "AgentProposalSummaryDto": {
+        "type": "object",
+        "properties": {
+          "pendingCount": {
+            "type": "number",
+            "description": "Proposals waiting for a decision now"
+          }
+        },
+        "required": [
+          "pendingCount"
+        ]
+      },
+      "DecideAgentProposalDto": {
+        "type": "object",
+        "properties": {
+          "confirmHighRisk": {
+            "type": "boolean",
+            "default": false,
+            "description": "Required for a proposal with risks (deletes, changes prices, or many items)"
+          }
+        }
+      },
       "AgentClientRegistration": {
         "type": "string",
         "enum": [
@@ -12765,6 +15674,17 @@
           "connectedAt"
         ]
       },
+      "AskChannel": {
+        "type": "string",
+        "enum": [
+          "web_widget",
+          "app_widget",
+          "api",
+          "mcp",
+          "agent_worker"
+        ],
+        "description": "Where the question comes from, for Crossmart’s statistics only"
+      },
       "AskQuestionDto": {
         "type": "object",
         "properties": {
@@ -12774,6 +15694,26 @@
             "maxLength": 500,
             "description": "A question about Crossmart, in any language",
             "example": "Can I publish the same product to Shopify and eBay?"
+          },
+          "conversationId": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "The `conversationId` of an earlier answer, to ask a follow-up in the same conversation. Only the same caller can continue it, and it expires after 24 hours without a question.",
+            "example": "conv_3q2-7wEXAMPLEd1Yk1x8kz0A6E2r9cP4mT5vW8yB0fH"
+          },
+          "channel": {
+            "default": "api",
+            "description": "Where the question comes from, for Crossmart’s statistics only",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AskChannel"
+              }
+            ]
+          },
+          "workspaceId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "For a signed-in person: a workspace they belong to, so Ask can also answer about it (listings, plan and usage, stores), read-only. API keys and agents always ask from their own workspace."
           }
         },
         "required": [
@@ -12799,7 +15739,7 @@
           "url": {
             "type": "string",
             "format": "uri",
-            "description": "The public page the answer is based on"
+            "description": "The public page the answer is based on, or for an account answer the page of the Crossmart app it comes from"
           }
         },
         "required": [
@@ -12813,6 +15753,38 @@
           "high",
           "medium",
           "low"
+        ]
+      },
+      "AskEscalationReason": {
+        "type": "string",
+        "enum": [
+          "unanswered",
+          "low_confidence",
+          "human_requested",
+          "sales"
+        ],
+        "description": "Why a person is offered; null when none is"
+      },
+      "AskEscalationOfferDto": {
+        "type": "object",
+        "properties": {
+          "offered": {
+            "type": "boolean",
+            "description": "True when a person can follow up: call `POST /api/v1/ask/escalations` with the `conversationId` to reach one"
+          },
+          "reason": {
+            "nullable": true,
+            "description": "Why a person is offered; null when none is",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AskEscalationReason"
+              }
+            ]
+          }
+        },
+        "required": [
+          "offered",
+          "reason"
         ]
       },
       "AskAnswerDto": {
@@ -12851,6 +15823,18 @@
           "supportEmail": {
             "type": "string",
             "format": "email"
+          },
+          "conversationId": {
+            "type": "string",
+            "description": "Send it as `conversationId` with a follow-up question. Only you can continue the conversation, for 24 hours after its last question."
+          },
+          "turnId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "This question and answer, as stored"
+          },
+          "escalation": {
+            "$ref": "#/components/schemas/AskEscalationOfferDto"
           }
         },
         "required": [
@@ -12859,7 +15843,688 @@
           "citations",
           "confidence",
           "handoff",
-          "supportEmail"
+          "supportEmail",
+          "conversationId",
+          "turnId",
+          "escalation"
+        ]
+      },
+      "CreateAskEscalationDto": {
+        "type": "object",
+        "properties": {
+          "conversationId": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "The `conversationId` of your conversation with Ask Crossmart"
+          },
+          "contactEmail": {
+            "type": "string",
+            "format": "email",
+            "description": "Where a person from the Crossmart team should email the reply"
+          },
+          "callbackUrl": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 2048,
+            "description": "A public https URL the reply is POSTed to, signed like Crossmart webhooks with the `callbackSecret` this call returns (event type `ask.escalation.replied`)"
+          },
+          "reason": {
+            "description": "Why; defaults to the reason Ask last offered a person, else `human_requested`",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AskEscalationReason"
+              }
+            ]
+          }
+        },
+        "required": [
+          "conversationId"
+        ]
+      },
+      "AskEscalationStatus": {
+        "type": "string",
+        "enum": [
+          "open",
+          "replied"
+        ]
+      },
+      "OpenedAskEscalationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ticket id. It is the only way to read the escalation, so keep it like a password."
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AskEscalationStatus"
+              }
+            ]
+          },
+          "reason": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AskEscalationReason"
+              }
+            ]
+          },
+          "reply": {
+            "type": "string",
+            "nullable": true,
+            "description": "The team’s reply, once sent"
+          },
+          "repliedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "callbackSecret": {
+            "type": "string",
+            "nullable": true,
+            "description": "Verifies the callback’s `Crossmart-Signature`, as for webhooks. Shown only now; null without a callback URL."
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "reason",
+          "reply",
+          "repliedAt",
+          "createdAt",
+          "callbackSecret"
+        ]
+      },
+      "AskEscalationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ticket id. It is the only way to read the escalation, so keep it like a password."
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AskEscalationStatus"
+              }
+            ]
+          },
+          "reason": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AskEscalationReason"
+              }
+            ]
+          },
+          "reply": {
+            "type": "string",
+            "nullable": true,
+            "description": "The team’s reply, once sent"
+          },
+          "repliedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "reason",
+          "reply",
+          "repliedAt",
+          "createdAt"
+        ]
+      },
+      "AskCallerType": {
+        "type": "string",
+        "enum": [
+          "anonymous",
+          "user",
+          "api_key",
+          "agent"
+        ]
+      },
+      "AskConversationSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "channel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AskChannel"
+              }
+            ]
+          },
+          "callerType": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AskCallerType"
+              }
+            ]
+          },
+          "clientName": {
+            "type": "string",
+            "nullable": true,
+            "description": "The agent’s name, for agents"
+          },
+          "workspaceId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "turnCount": {
+            "type": "number"
+          },
+          "firstQuestion": {
+            "type": "string",
+            "nullable": true,
+            "description": "The first question, redacted"
+          },
+          "lastOutcome": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AskOutcome"
+              }
+            ]
+          },
+          "escalated": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "lastActivityAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "channel",
+          "callerType",
+          "clientName",
+          "workspaceId",
+          "turnCount",
+          "firstQuestion",
+          "lastOutcome",
+          "escalated",
+          "createdAt",
+          "lastActivityAt"
+        ]
+      },
+      "AskConversationPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AskConversationSummaryDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor",
+          "total"
+        ]
+      },
+      "AccountLookupKind": {
+        "type": "string",
+        "enum": [
+          "listing_status",
+          "plan_usage",
+          "channel_connections",
+          "failed_listings"
+        ]
+      },
+      "AskTurnDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "position": {
+            "type": "number"
+          },
+          "question": {
+            "type": "string",
+            "description": "The question, with obvious secrets and emails redacted"
+          },
+          "answer": {
+            "type": "string"
+          },
+          "outcome": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AskOutcome"
+              }
+            ]
+          },
+          "confidence": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AskConfidence"
+              }
+            ]
+          },
+          "citations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AskCitationDto"
+            }
+          },
+          "accountLookups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccountLookupKind"
+            }
+          },
+          "escalationReason": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AskEscalationReason"
+              }
+            ]
+          },
+          "latencyMs": {
+            "type": "number"
+          },
+          "model": {
+            "type": "string",
+            "nullable": true
+          },
+          "cached": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "position",
+          "question",
+          "answer",
+          "outcome",
+          "confidence",
+          "citations",
+          "accountLookups",
+          "escalationReason",
+          "latencyMs",
+          "model",
+          "cached",
+          "createdAt"
+        ]
+      },
+      "AskEscalationRecordDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "conversationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AskEscalationReason"
+              }
+            ]
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AskEscalationStatus"
+              }
+            ]
+          },
+          "contactEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "callbackUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "reply": {
+            "type": "string",
+            "nullable": true
+          },
+          "repliedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "repliedBy": {
+            "type": "string",
+            "nullable": true,
+            "description": "The admin who replied"
+          },
+          "callbackDeliveredAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "callbackError": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why the callback failed"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "conversationId",
+          "reason",
+          "status",
+          "contactEmail",
+          "callbackUrl",
+          "reply",
+          "repliedAt",
+          "repliedBy",
+          "callbackDeliveredAt",
+          "callbackError",
+          "createdAt"
+        ]
+      },
+      "AskConversationDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "channel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AskChannel"
+              }
+            ]
+          },
+          "callerType": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AskCallerType"
+              }
+            ]
+          },
+          "clientName": {
+            "type": "string",
+            "nullable": true,
+            "description": "The agent’s name, for agents"
+          },
+          "workspaceId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "turnCount": {
+            "type": "number"
+          },
+          "firstQuestion": {
+            "type": "string",
+            "nullable": true,
+            "description": "The first question, redacted"
+          },
+          "lastOutcome": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AskOutcome"
+              }
+            ]
+          },
+          "escalated": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "lastActivityAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "turns": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AskTurnDto"
+            }
+          },
+          "escalations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AskEscalationRecordDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "channel",
+          "callerType",
+          "clientName",
+          "workspaceId",
+          "turnCount",
+          "firstQuestion",
+          "lastOutcome",
+          "escalated",
+          "createdAt",
+          "lastActivityAt",
+          "turns",
+          "escalations"
+        ]
+      },
+      "AskQuestionCountDto": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": "string",
+            "description": "One of the questions asked alike, redacted"
+          },
+          "count": {
+            "type": "number",
+            "description": "How many times it was asked in the period"
+          },
+          "lastAskedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question",
+          "count",
+          "lastAskedAt"
+        ]
+      },
+      "ReplyAskEscalationDto": {
+        "type": "object",
+        "properties": {
+          "reply": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5000,
+            "description": "Plain text; it is emailed and POSTed to the callback as written"
+          }
+        },
+        "required": [
+          "reply"
+        ]
+      },
+      "CreateSandboxAccountDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "example": "ana@example.com",
+            "description": "The person the account is for. The claim link goes to this address."
+          },
+          "storeName": {
+            "type": "string",
+            "maxLength": 200,
+            "example": "Ana Ceramics",
+            "description": "What to call the store; the person can rename it later"
+          }
+        },
+        "required": [
+          "email",
+          "storeName"
+        ]
+      },
+      "SandboxOpeningOutcome": {
+        "type": "string",
+        "enum": [
+          "created",
+          "sign_in_required"
+        ]
+      },
+      "SandboxAccountDto": {
+        "type": "object",
+        "properties": {
+          "outcome": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SandboxOpeningOutcome"
+              }
+            ]
+          },
+          "nextStep": {
+            "type": "string",
+            "description": "What the agent should do next"
+          },
+          "workspaceId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "apiKey": {
+            "type": "string",
+            "nullable": true,
+            "description": "An Editor API key for the new workspace, shown only now. Send it as `Authorization: Bearer <key>` or `x-api-key`."
+          },
+          "claimExpiresAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "When the claim link stops working and the unclaimed account is deleted"
+          }
+        },
+        "required": [
+          "outcome",
+          "nextStep",
+          "workspaceId",
+          "apiKey",
+          "claimExpiresAt"
+        ]
+      },
+      "SandboxClaimTokenDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "SandboxClaimPreviewDto": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string",
+            "description": "The address the account is for; the person signs in with it"
+          },
+          "storeName": {
+            "type": "string"
+          },
+          "claimExpiresAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the link stops working and the account is deleted"
+          },
+          "passwordSet": {
+            "type": "boolean",
+            "description": "True when the person already has a password: they sign in and claim from the app instead of choosing one"
+          }
+        },
+        "required": [
+          "workspaceId",
+          "email",
+          "storeName",
+          "claimExpiresAt",
+          "passwordSet"
+        ]
+      },
+      "ClaimSandboxDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "password": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 128,
+            "description": "The password the person signs in with from now on"
+          }
+        },
+        "required": [
+          "token",
+          "password"
+        ]
+      },
+      "ClaimedSandboxDto": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string",
+            "description": "The address to sign in with"
+          }
+        },
+        "required": [
+          "workspaceId",
+          "email"
         ]
       },
       "WebhookEventType": {
@@ -13333,6 +16998,251 @@
           "deliveredAt",
           "createdAt",
           "payload"
+        ]
+      },
+      "WorkspaceEventType": {
+        "type": "string",
+        "enum": [
+          "agent.tool_called",
+          "agent.change_proposed",
+          "agent.change_approved",
+          "agent.change_rejected",
+          "agent.change_applied",
+          "agent.change_failed",
+          "agent.turn_failed",
+          "agent.proposal_received",
+          "agent.proposal_approved",
+          "agent.proposal_rejected",
+          "agent.proposal_expired",
+          "agent.proposal_failed",
+          "agent.activity",
+          "listing.published",
+          "listing.updated",
+          "listing.failed",
+          "listing.delisted",
+          "stock.reconciled",
+          "stock.sync_failed",
+          "stock.oversold",
+          "order.received",
+          "store.connected",
+          "store.disconnected",
+          "store.connect_failed",
+          "webhook.delivery_failed",
+          "webhook.endpoint_disabled",
+          "workspace.change"
+        ]
+      },
+      "WorkspaceEventCategory": {
+        "type": "string",
+        "enum": [
+          "agent",
+          "stores",
+          "orders",
+          "workspace"
+        ]
+      },
+      "WorkspaceEventSeverity": {
+        "type": "string",
+        "enum": [
+          "info",
+          "success",
+          "warning",
+          "error"
+        ]
+      },
+      "WorkspaceEventActorDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ActivityActorType"
+              }
+            ]
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "The person or API key; for an agent, the person it acted for"
+          },
+          "agentName": {
+            "type": "string",
+            "nullable": true,
+            "example": "Crossmart Agent",
+            "description": "The agent, for agent actions: \"Crossmart Agent\", or a connected agent such as \"Claude\""
+          },
+          "approvedByName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Who approved the outside agent's proposal that made the change, if anyone"
+          }
+        },
+        "required": [
+          "type",
+          "name",
+          "agentName",
+          "approvedByName"
+        ]
+      },
+      "WorkspaceEventRefsDto": {
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The store (channel connection)"
+          },
+          "productId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "orderId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "webhookEndpointId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "conversationId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "Your Crossmart Agent conversation"
+          },
+          "actionId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The Crossmart Agent tool call"
+          },
+          "proposalId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "An outside agent's proposal"
+          }
+        },
+        "required": [
+          "connectionId",
+          "productId",
+          "orderId",
+          "webhookEndpointId",
+          "conversationId",
+          "actionId",
+          "proposalId"
+        ]
+      },
+      "WorkspaceEventDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "activity:0193f7c2-…",
+            "description": "Stable across reads"
+          },
+          "cursor": {
+            "type": "string",
+            "description": "Pass as `after` (or `Last-Event-ID`) to read what follows it"
+          },
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WorkspaceEventType"
+              }
+            ]
+          },
+          "category": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WorkspaceEventCategory"
+              }
+            ]
+          },
+          "severity": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WorkspaceEventSeverity"
+              }
+            ]
+          },
+          "summary": {
+            "type": "string",
+            "example": "Published “Linen Shirt” on Outlet"
+          },
+          "detail": {
+            "type": "string",
+            "nullable": true,
+            "description": "More to read: the store’s error, what a read found, an order’s total"
+          },
+          "actor": {
+            "$ref": "#/components/schemas/WorkspaceEventActorDto"
+          },
+          "refs": {
+            "description": "What the event is about",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WorkspaceEventRefsDto"
+              }
+            ]
+          },
+          "itemCount": {
+            "type": "number",
+            "nullable": true,
+            "description": "Items the event covered"
+          },
+          "occurredAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "cursor",
+          "type",
+          "category",
+          "severity",
+          "summary",
+          "detail",
+          "actor",
+          "refs",
+          "itemCount",
+          "occurredAt"
+        ]
+      },
+      "WorkspaceEventStreamReadyDto": {
+        "type": "object",
+        "properties": {
+          "cursor": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "cursor"
+        ]
+      },
+      "WorkspaceEventPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "Oldest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkspaceEventDto"
+            }
+          },
+          "cursor": {
+            "type": "string",
+            "description": "Pass as `after` to read what happens next; it moves on even when nothing did"
+          }
+        },
+        "required": [
+          "items",
+          "cursor"
         ]
       }
     }
