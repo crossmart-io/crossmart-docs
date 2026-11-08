@@ -17,7 +17,8 @@ agent's credentials, so an agent gets the same validation, permissions and activ
 person in the dashboard.
 
 [Crossmart Agent](/sellers/crossmart-agent/), the agent inside the web app, offers the same tools. It
-proposes every change for a person to approve before it runs.
+proposes every change for a person to approve before it runs. So do outside agents, by default:
+see [Changes wait for approval](#changes-wait-for-approval).
 
 |                |                                                  |
 | -------------- | ------------------------------------------------ |
@@ -124,6 +125,39 @@ The local server talks to the client over stdio; `CROSSMART_API_URL` defaults to
 Claude.ai, ChatGPT and Meta Muse connectors sign in with [OAuth](#sign-in-with-oauth) rather
 than a pasted key; see their [setup guides](/agents/).
 
+## Changes wait for approval
+
+Unless the seller chooses otherwise, a write tool doesn't change anything when an agent calls it.
+It proposes the change, which waits for the seller under
+[Agent proposals](/sellers/agent-proposals/) with a before-and-after preview, and answers without
+an error:
+
+```json
+{
+  "status": "proposed",
+  "message": "Proposed; waiting for the seller's approval in Crossmart. …",
+  "proposalId": "0193…",
+  "summary": "Change a variant's price: Stoneware Mug",
+  "expiresAt": "2026-11-15T10:00:00.000Z"
+}
+```
+
+Tell the user the change is waiting for them, and don't send it again. `get_proposal` reads where
+it stands: `pending`, `applying`, `applied` (with the API's answer), `failed` (with the reason),
+`rejected`, or `expired` when nobody decides within 7 days. An approved change runs as the agent,
+and the activity log reads "Claude for Dana, approved by Lee".
+
+This applies to every MCP session, OAuth or API key. When the seller sets **Settings → Workspace →
+Outside agents' changes** to **Apply directly**, write tools change things at once, as before.
+Read tools, `generate_content` (its results already wait as suggestions) and `ask_crossmart` never
+wait. Existing clients need no change: the tools, names and inputs are the same.
+
+**Over the REST API**, an agent's OAuth token gets `403` with `code: agent_approval_required` for
+a direct write while approvals are on. It proposes instead with
+`POST /api/v1/workspaces/{workspaceId}/agent-proposals` and `{ "tool": "<MCP tool>", "input": {…} }`;
+the answer's `outcome` is `proposed` or `apply_directly` (then make the call itself). API keys used
+by scripts and integrations keep writing directly.
+
 ## Tools
 
 | Tool                        | Does                                                                   | Changes data |
@@ -160,6 +194,7 @@ than a pasted key; see their [setup guides](/agents/).
 | `list_webhook_endpoints`    | The URLs the workspace sends events to, and which events each gets     |              |
 | `create_webhook_endpoint`   | Adds a URL to send events to; returns its signing secret once          |     Yes      |
 | `ask_crossmart`             | Answers questions about Crossmart itself from its docs, with sources   |              |
+| `get_proposal`              | Where a change the agent proposed stands: pending, applied, rejected…  |              |
 
 Read-only tools are marked `readOnlyHint`, and `replace_product`, `remove_product_from_store` and
 `save_item_specifics` are marked `destructiveHint`, so clients can ask before running them. When
@@ -192,6 +227,8 @@ Then `retry_store_listing` sends the listing again.
   suggestions; a person with the Approver, Admin or Owner role reviews them in the dashboard's
   Suggestions inbox.
 - **Act outside their workspace.** A key, or an OAuth token, only reaches its own workspace.
+- **Skip the seller's approval.** Unless the seller lets agents apply directly, every change waits
+  for them, and only a person signed in to Crossmart can turn that off.
 
 ## Try it
 

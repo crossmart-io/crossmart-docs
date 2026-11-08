@@ -82,6 +82,7 @@ export default defineConfig({
             { label: 'Stock sync', link: '/sellers/stock/' },
             { label: 'Orders', link: '/sellers/orders/' },
             { label: 'Crossmart Agent', link: '/sellers/crossmart-agent/' },
+            { label: 'Agent proposals', link: '/sellers/agent-proposals/' },
           ],
         },
         {
