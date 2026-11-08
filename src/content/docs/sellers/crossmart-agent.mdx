@@ -48,11 +48,24 @@ short line, such as "List a store's products by state · 3 found", and changes i
 
 ### Map
 
-Your catalog and every store it feeds, with how many products are published, pending, failed or
-not listed on each. Above it, a status bar shows at a glance:
+Your catalog and every store it feeds. Each store's card counts its products in five groups:
+
+| Count             | What it holds                                                                              |
+| ----------------- | ------------------------------------------------------------------------------------------ |
+| **Published**     | Live in the store                                                                          |
+| **Pending**       | On their way: ready to publish, publishing, or being removed                               |
+| **Needs details** | Waiting for something the marketplace requires, such as an `https` image or item specifics |
+| **Failed**        | The store refused the last publish or update                                               |
+| **Not listed**    | Products of your catalog that are not in the store                                         |
+
+Click a count to open those products: the store's **Listings** tab, filtered to that state (or, for
+**Not listed**, the products table). **Needs details** shows what each product is missing and a
+button that opens the place to fix it; see [Listing states](/sellers/listing-states/).
+
+Above the map, a status bar shows at a glance:
 
 - **Stores:** how many are connected with no failed listings, of all your stores.
-- **Listings:** how many are live, and how many failed.
+- **Listings:** how many are live, how many failed, and how many need details.
 - **Agent:** idle, working, or waiting for your approval.
 - **Last sync:** when a store last synced.
 

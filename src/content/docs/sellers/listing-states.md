@@ -53,8 +53,10 @@ recovers by itself. **Try again** can't go through when:
 
 ## Find every listing that needs attention
 
-- The store's **Listings** tab filters by **Published**, **Not published yet**, **Failed**,
-  **Removing** and **Removed**.
+- The store's **Listings** tab filters by **Published**, **Not published yet**, **Needs details**,
+  **Failed**, **Removing** and **Removed**.
+- The map on the [Crossmart Agent](/sellers/crossmart-agent/) page counts each store's products
+  that need details; click the count to open them.
 - The **Products** table filters **With listing errors** across all stores.
 - The **Channels** item in the sidebar counts failed listings.
 
