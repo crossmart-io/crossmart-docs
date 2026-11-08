@@ -10,8 +10,8 @@ as "Fix my failed eBay listings", and it looks up what it needs and proposes the
 changes until you approve. While it works, you see on a live map of your catalog and stores what
 it is reading and changing, next to a stream of everything that happens in your workspace.
 
-You don't need to set up your own AI agent to use it. If you do use one through
-[MCP](/agents/), Crossmart Agent works with the same tools and the same limits.
+It works inside Crossmart, so no assistant of your own is needed. Outside agents you
+[connect](/agents/) use the same tools and limits.
 
 <Aside>
   Crossmart Agent was called Agent Worker. The API and the `agent_worker:use` permission keep that
@@ -168,8 +168,9 @@ change is refused when you approve it, and the card says so.
 Conversations are kept for 180 days after the last message, then deleted.
 
 <Aside title="For developers">
-  Crossmart Agent uses the same tools as Crossmart's [MCP server](/developers/mcp/), and every call
-  goes through the same API, with the same checks and the same activity log. The events on the page
+  Crossmart Agent uses the same tools as outside agents ([developer reference](/developers/mcp/)),
+  and every call goes through the same API, with the same checks and the same activity log. It never
+  makes a change on its own: every change waits for your approval. The events on the page
   come from the workspace event stream, `GET /workspaces/{workspaceId}/events/stream` (server-sent
   events, resumable with `Last-Event-ID`), or `GET /workspaces/{workspaceId}/events?after=…` to
   poll. Both need the `activity:view` permission.
