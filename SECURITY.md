@@ -7,7 +7,7 @@ Crossmart stores marketplace credentials and order data, so we take security rep
 **Do not open a public issue.** Report vulnerabilities privately by either:
 
 - using [GitHub private vulnerability reporting](https://github.com/crossmart-io/crossmart-docs/security/advisories/new), or
-- emailing **hello@crossmart.io** with "Security" in the subject.
+- emailing **security@crossmart.io**.
 
 Please include a description, the steps to reproduce, the affected version, and the impact you expect.
 
@@ -19,4 +19,4 @@ Crossmart is in early development. Only the latest commit on `main` receives sec
 
 ## Scope
 
-This repository holds the documentation site only. A vulnerability in the Crossmart platform, its API, SDKs or web app belongs in [crossmart-io/crossmart](https://github.com/crossmart-io/crossmart/security/advisories/new) or [crossmart-io/crossmart-web](https://github.com/crossmart-io/crossmart-web/security/advisories/new), though hello@crossmart.io reaches us for any of them.
+This repository holds the documentation site only. A vulnerability in the Crossmart platform, its API, SDKs or web app belongs in [crossmart-io/crossmart](https://github.com/crossmart-io/crossmart/security/advisories/new) or [crossmart-io/crossmart-web](https://github.com/crossmart-io/crossmart-web/security/advisories/new), though security@crossmart.io reaches us for any of them.
