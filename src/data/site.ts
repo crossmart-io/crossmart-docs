@@ -9,6 +9,9 @@ const MARKETING_SITE_URL = 'https://crossmart.io';
 
 export const LLMS_TXT_PATH = '/llms.txt';
 
+/** The sitemap index written by `@astrojs/sitemap`, which Starlight adds when `site` is set. */
+export const SITEMAP_INDEX_PATH = '/sitemap-index.xml';
+
 export const EXTERNAL_URLS = {
   /** The API catalog (RFC 9727). */
   apiCatalog: `${MARKETING_SITE_URL}/.well-known/api-catalog`,
