@@ -8,7 +8,7 @@ field by field, and lets you change what that store shows without touching the c
 other stores. Use it for a marketplace-friendly title, a different price, fewer images, or a
 smaller share of your stock.
 
-Open it from the product's **Channels** card (**Edit listing**), or from the store's
+Open it from the product's **Stores** card (**Edit listing**), or from the store's
 **Listings** tab. Adding a product to a store opens it too, so you can make changes before the
 product is published.
 
@@ -39,8 +39,8 @@ product**.
 | **Visibility**          | **Same as the product's status**, **Show in this store** or **Hide in this store**                                |
 | **Stock shown**         | **Hold back**: units this store never sees. **Show at most**: a cap on the quantity the store shows               |
 
-Title and description have an AI rewrite button that drafts a version for this store into the
-form. Nothing is saved until you click **Save**.
+**Write with AI**, at the top of the editor, drafts a title and description for this store into
+the form. Nothing is saved until you click **Save**.
 
 Saving updates the listing on the store when it is already published. A price you fix here wins
 over the pricing rule, and the editor warns you when it is below your price floor.

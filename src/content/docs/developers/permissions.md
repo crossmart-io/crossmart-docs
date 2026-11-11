@@ -14,7 +14,7 @@ working when roles change.
 
 | Permission            | Allows                                                               | Owner | Admin | Editor | Approver | Viewer |
 | --------------------- | -------------------------------------------------------------------- | :---: | :---: | :----: | :------: | :----: |
-| `workspace:view`      | Open the workspace and its overview                                  |   ✓   |   ✓   |   ✓    |    ✓     |   ✓    |
+| `workspace:view`      | Open the workspace and its Home page                                 |   ✓   |   ✓   |   ✓    |    ✓     |   ✓    |
 | `members:view`        | See the members                                                      |   ✓   |   ✓   |   ✓    |    ✓     |   ✓    |
 | `products:view`       | Products, saved views, import history                                |   ✓   |   ✓   |   ✓    |    ✓     |   ✓    |
 | `inventory:view`      | Stock levels and stock history                                       |   ✓   |   ✓   |   ✓    |    ✓     |   ✓    |
@@ -49,8 +49,8 @@ working when roles change.
 
 ## Custom roles
 
-Besides the five built-in roles, a workspace can define its own roles under
-`/api/v1/workspaces/{workspaceId}/roles`. Listing it returns both the built-in roles, with their
+Besides the five built-in roles, a workspace can define its own roles, in the dashboard under
+**Settings → Team → Manage roles**, or under `/api/v1/workspaces/{workspaceId}/roles`. Listing it returns both the built-in roles, with their
 permissions, and the custom ones. Members, invitations and API keys hold one as
 `role: CUSTOM` plus `customRoleId`. The database refuses one without the other.
 

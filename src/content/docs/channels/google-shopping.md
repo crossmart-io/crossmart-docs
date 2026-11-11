@@ -17,7 +17,7 @@ and free listings.
 
 ## Connect
 
-1. In **Channels**, click **Connect** on Google Merchant Center.
+1. In **Stores**, click **Connect** on Google Merchant Center.
 2. Enter your **Merchant Center ID**: the number at the top right of Merchant Center
    ([merchants.google.com](https://merchants.google.com)).
 3. Sign in with Google and approve Crossmart.
@@ -43,6 +43,8 @@ Each variant becomes one Google product, grouped with the other variants of its 
   compare-at price is higher, it is sent as the regular price and your price as the sale price.
 - Availability: in stock, out of stock, or backorder when the variant keeps selling when out of
   stock. It is updated when the product is published or changed.
+- Condition from the product's [condition](/sellers/products/#item-condition): **New** and
+  **Refurbished** as they are, every other condition as used, and new when it is not set.
 - Brand from the vendor, GTIN from the barcode, color and size from options named Color and
   Size, and the shipping weight.
 

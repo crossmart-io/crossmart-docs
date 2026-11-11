@@ -25,29 +25,50 @@ done by an [AI agent](/agents/) or through the [REST API](/developers/).
 | **Store**        | One connected account on a channel: a Shopify store, or an eBay account on one marketplace. You can connect several stores of the same channel.              |
 | **Listing**      | A product on one store. Each listing has a [state](/sellers/listing-states/) and can show the product [differently in that store](/sellers/listing-editor/). |
 | **Pricing rule** | How a store prices every product: a markup or discount, rounding, a floor. See [Pricing](/sellers/pricing/).                                                 |
-| **Suggestion**   | A change proposed by Crossmart's AI, such as a new title for one store. Nothing changes until a person approves it in **Suggestions**.                       |
-| **Proposal**     | A change an AI agent you connected wants to make. It waits in **Agent proposals** until you approve it, unless you let agents apply changes directly.        |
+| **Suggestion**   | A change proposed by Crossmart's AI, such as a new title for one store. Nothing changes until a person approves it under **Agent → Review**.                 |
+| **Proposal**     | A change an AI agent you connected wants to make. It waits under **Agent → Review** until you approve it, unless you let agents apply changes directly.      |
 
 ## First steps
 
 <Steps>
 
-1. **Connect a store.** Open **Channels**, pick the channel and click **Connect**. You approve
-   Crossmart on the channel's own site. See [Connect a store](/sellers/connect-a-store/).
+1. **Connect a store.** Open **Stores**, pick the channel and click **Connect**. You approve
+   Crossmart on the channel's own site, then one setup step asks for what the store needs (such
+   as eBay's business policies) and offers to add all your active products. See
+   [Connect a store](/sellers/connect-a-store/).
 
-2. **Add your products.** Create them in **Products**, import a Shopify product export in
-   **Imports**, or import the catalog of a connected Shopify store.
+2. **Add your products.** Click **Add product** on **Products**, choose the stores under
+   **Publish to**, and click **Save & publish**. See [Products](/sellers/products/). You can
+   also **Import** a CSV file on **Products**, or import the catalog of a connected Shopify
+   store.
 
-3. **Finish the store's setup.** Some channels need details before they can publish, such as
-   eBay's business policies and ship-from address. The store's page says what is missing.
+3. **Publish the rest.** Add products to a store from the product's page, from the products
+   table, or with the store's automatic rule. See [Publish products](/sellers/publish-products/).
 
-4. **Publish.** Add products to the store from the product's page, from the products table, or
-   with the store's automatic rule. See [Publish products](/sellers/publish-products/).
+4. **Check what needs you.** **Home** opens with **Needs attention**: stores to reconnect,
+   listings a store refused, and changes waiting for your review. See
+   [Home](/sellers/home/).
 
-5. **Check the listings.** The store's **Listings** tab shows where each product stands, and
-   what to fix when a store refuses one. See [Listing states](/sellers/listing-states/).
+5. **Mark one-off items sold.** When an item sells somewhere Crossmart doesn't manage, **Mark as
+   sold** takes it off every store at once. See [Mark as sold](/sellers/products/#mark-as-sold).
 
 </Steps>
+
+## Find your way around
+
+The sidebar has six items:
+
+| Item         | What's there                                                                                                           |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| **Home**     | **Needs attention**, your first steps while setup is unfinished, and sales. **Activity** opens the log                 |
+| **Products** | Your catalog. The **Stock** tab has every variant's stock; **Import** brings in a CSV file                             |
+| **Orders**   | Orders from every store                                                                                                |
+| **Stores**   | Your connected stores, each with its listings and settings, and **Connect** for a new one                              |
+| **Agent**    | [Crossmart Agent](/sellers/crossmart-agent/) and its map, and **Review** for changes waiting for you                   |
+| **Settings** | Tabs: **General**, **Team** (members and roles), **Billing** and **Developers** (API keys, webhooks, connected agents) |
+
+Your own account, including deleting it, is under **Account** in the menu behind your avatar.
+Bookmarks to older pages, such as `/channels` or `/settings/api-keys`, still open the right place.
 
 ## Who can do what
 
@@ -60,7 +81,7 @@ list.
 
 Plans differ by the number of active listings, connected stores and other limits. See the plans
 at [crossmart.io/#pricing](https://crossmart.io/#pricing). Your current plan and usage are under
-**Settings → Plan & usage**.
+**Settings → Billing**.
 
 ## Next
 

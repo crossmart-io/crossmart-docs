@@ -13,37 +13,39 @@ need to press a separate publish button.
 - The store is connected and its setup is finished (see
   [Connect a store](/sellers/connect-a-store/#finish-the-stores-setup)).
 - The product is **Active**. Stores only sell active products: Shopify keeps a draft product
-  hidden, and eBay won't list one.
+  hidden, and eBay won't list one. New products start active.
 - The product has at least one image at a public `https` address. Most channels need one.
 - Products with several variants name their options (such as Size and Color). A product has up to
   three options.
 
 ## Add products to a store
 
-There are three ways, and you can mix them:
+There are four ways, and you can mix them:
 
-| Way                | Where                                                                                                                            | Stays in the store                 |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
-| **One product**    | The product's page, **Channels** card → **Add to store**. You can change how it shows in that store before adding it.            | Until you remove it                |
-| **Many products**  | Select them in the **Products** table and add them to a store.                                                                   | Until you remove them              |
-| **Automatic rule** | The store's **Settings** tab: **All products**, or **Products matching filters** (tags, vendor, status, search). Off by default. | While the rule matches the product |
+| Way                | Where                                                                                                                                                                                                                   | Stays in the store                 |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| **A new product**  | The new-product form: tick the stores under **Publish to** and click **Save & publish**. See [Products](/sellers/products/#add-a-product-and-publish-it).                                                               | Until you remove it                |
+| **One product**    | The product's page, **Stores** card → **Add to store**. You can change how it shows in that store before adding it.                                                                                                     | Until you remove it                |
+| **Many products**  | Select them in the **Products** table and add them to a store.                                                                                                                                                          | Until you remove them              |
+| **Automatic rule** | The store's **Settings** tab, **Add products automatically**: **All products**, or **Products matching filters** (tags, vendor, status, search). **Add all my active products**, when you connect a store, turns it on. | While the rule matches the product |
 
 Products imported from a Shopify store are in that store already. Saving an automatic rule
-applies it right away: it publishes what it now adds and takes off what it now drops, and shows
-how many before you save.
+(**Save** in the bar at the bottom of the store's **Settings** tab) applies it right away: it
+publishes what it now adds and takes off what it now drops, and shows how many before you save.
 
 Your plan sets how many active listings you can have. Past the limit, Crossmart says so and
 publishes nothing more until you upgrade or remove listings.
 
 ## Follow publishing
 
-Publishing runs in the background and usually takes seconds. The product's **Channels** card and
+Publishing runs in the background and usually takes seconds. The product's **Stores** card and
 the store's **Listings** tab show each product's [state](/sellers/listing-states/): **Publishing**
 while it is sent, then **Published** with a link to the live listing, or **Needs details** or
 **Failed** with what to fix.
 
 The products table can be filtered by store: products in a store, not in a store, in no store,
-or **With listing errors**. The **Channels** item in the sidebar shows how many listings failed.
+or **With listing errors**. Failed listings also show under **Needs attention** on
+[Home](/sellers/home/), and the **Stores** item in the sidebar counts them.
 
 ## Changes after publishing
 
@@ -59,16 +61,18 @@ Open the product's listing and choose **Remove from store**. It is taken off the
 background (archived on Shopify, ended on eBay) and keeps its order history. The automatic rule
 won't add it back; add it again by hand when you want it back.
 
-Deleting a product from your catalog takes it off every store that lists it.
+Deleting a product from your catalog takes it off every store that lists it. To keep the
+product but take it off every store because it sold elsewhere, use
+[Mark as sold](/sellers/products/#mark-as-sold).
 
 ## Send everything again
 
-**Send all products to [channel] again**, on the store's page, sends every product in the store
+**Send all products to [channel] again**, on the store's **Settings** tab, sends every product in the store
 again and takes off the ones it no longer has. You don't need it day to day; use it after an
 outage, or after changing listings on the channel's own site.
 
 <Aside type="tip" title="AI-written titles and descriptions">
-  Crossmart can write a store-specific title and description for your products. They arrive in
-  **Suggestions**, and nothing changes until someone with the Approver, Admin or Owner role approves
-  them.
+  Crossmart can write a store-specific title and description for your products. They arrive under
+  **Agent → Review** (**AI suggestions**), and nothing changes until someone with the Approver,
+  Admin or Owner role approves them.
 </Aside>

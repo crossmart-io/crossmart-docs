@@ -10,10 +10,12 @@ step, and reads the account's orders.
 
 ## Connect
 
-1. In **Channels**, click **Connect** on eBay.
+1. In **Stores**, click **Connect** on eBay.
 2. Choose the marketplace you sell on. Each marketplace is its own store in Crossmart; connect
    another one the same way with the same eBay account.
 3. Sign in on eBay and approve Crossmart.
+4. Back in Crossmart, the [setup step](/sellers/connect-a-store/#the-setup-step) asks for the
+   [listing defaults](#listing-defaults) below, and whether to add all your active products.
 
 The store is named after your eBay user name and the site, such as `demo_seller · eBay US`, and
 prices on it are in the marketplace's currency.
@@ -33,13 +35,14 @@ prices on it are in the marketplace's currency.
 
 eBay lists items only under **business policies**: one for shipping, one for payment and one for
 returns. Every listing in the store is sold under the store's listing defaults, which you set
-once in the store's **Settings → Listing defaults**:
+in the setup step after connecting, or later in the store's **Settings → Listing defaults** (then
+**Save** in the bar at the bottom):
 
-| Default                          | What to choose                                                                           |
-| -------------------------------- | ---------------------------------------------------------------------------------------- |
-| Shipping, payment, return policy | One of your eBay account's policies. When the account has only one of a type, it is used |
-| Condition                        | **New** by default, or any eBay condition (used, refurbished, for parts…)                |
-| Ships from                       | The postal code and country (and optionally the city) items ship from                    |
+| Default                          | What to choose                                                                                         |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Shipping, payment, return policy | One of your eBay account's policies. When the account has only one of a type, it is used               |
+| Condition                        | For products without their own [condition](#item-condition). **New** by default, or any eBay condition |
+| Ships from                       | The postal code and country (and optionally the city) items ship from                                  |
 
 Until a policy of each type and the ship-from address are set, the store shows **Finish setup to
 publish** and its products wait in **Needs details**.
@@ -54,6 +57,21 @@ publish** and its products wait in **Needs details**.
   eBay can take a few minutes.
 - To use your own, create them on eBay ([business policies](https://www.ebay.com/bp/manage)),
   then click **Refresh policies**.
+
+## Item condition
+
+A product's own **Condition** ([Products](/sellers/products/#item-condition)) wins over the
+store's default. It is sent as the eBay grade of the same name, except:
+
+| Condition in Crossmart      | Sent to eBay as          |
+| --------------------------- | ------------------------ |
+| **Refurbished**             | Seller refurbished       |
+| **Used – fair**             | Used – acceptable        |
+| **For parts / not working** | For parts or not working |
+
+eBay names some grades per category; in clothing, for example, **New** is "New with tags" and
+**New (other)** is "New without tags". A category that doesn't take the grade refuses the listing
+with eBay's own message. Certified refurbished is not offered: it needs eBay's program.
 
 ## Categories and item specifics
 

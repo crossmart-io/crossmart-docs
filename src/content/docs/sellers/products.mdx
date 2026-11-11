@@ -1,0 +1,106 @@
+---
+title: Products
+description: Add a product and publish it in one step, the fields of the product page, item condition and how each store receives it, and marking an item sold.
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+
+Your catalog is under **Products**. Each product has a page with its photos, text, price,
+condition and stock, and a **Stores** card that shows where it is listed.
+
+## Add a product and publish it
+
+<Steps>
+
+1. On **Products**, click **Add product**. A new product starts **Active** with a quantity of 1.
+
+2. Add photos, a title and a description, then the price, the [condition](#item-condition) and
+   the quantity.
+
+3. Under **Publish to**, tick the stores to sell it on. Every store that is ready is ticked
+   already.
+
+4. Click **Save & publish**. The product is saved and added to each ticked store at once.
+
+</Steps>
+
+**Save as draft** saves the product as a draft and adds it nowhere. With no store ticked, the
+main button just says **Save**.
+
+In **Publish to**:
+
+- A store that needs reconnecting can't be ticked; **Reconnect first** takes you there.
+- A store whose [automatic rule](/sellers/publish-products/#add-products-to-a-store) takes every
+  active product is ticked and locked (**Adds every active product**).
+- The card shows only for roles that can publish listings (`listings:edit`).
+
+If a store doesn't take the product, the product page opens with a note such as **Added to 1 of
+2 stores**, with the store's reason. The product is saved either way; add it to that store again
+from the **Stores** card once the cause is fixed. When a store needs a detail first, such as an
+eBay category, the product page opens with that store's listing so you can fill it in. See
+[Listing states](/sellers/listing-states/).
+
+## The product page
+
+The main column has, in this order:
+
+- **Photos.** The first one is the main image.
+- **Title** and **Description**. **Write with AI**, next to the title, drafts both; you can give
+  it an instruction or pick a quick one, such as **Shorter**. Nothing is saved until you save.
+- **Price**, **Condition** and **Quantity**.
+- **More details**, folded: compare-at price, cost, SKU, barcode, stock tracking, tax, shipping,
+  type, brand or vendor, tags, and variants. It opens by itself for a product with variants.
+
+The side column has the product's status and the **Stores** card: each store with the product's
+state there, **Add to store** or **Edit listing**, and the fix when something is missing.
+**View map** opens the map on the [Crossmart Agent](/sellers/crossmart-agent/) page. Below
+them, **Recent activity** lists the product's latest changes, and **All activity** opens the
+workspace's activity log.
+
+## Item condition
+
+**Condition** says what state the item is in. Choose one of:
+
+**New** · **New (other)** · **New with defects** · **Like new** · **Refurbished** ·
+**Used – excellent** · **Used – very good** · **Used – good** · **Used – fair** ·
+**For parts / not working**
+
+Each store gets it in its own terms:
+
+| Channel         | What it receives                                                                                                                                                                                   |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| eBay            | The eBay grade of the same name; **Used – fair** is sent as Used – acceptable, **For parts / not working** as For parts or not working. See [eBay: item condition](/channels/ebay/#item-condition) |
+| Google Shopping | **New** and **Refurbished** as they are; every other condition as used                                                                                                                             |
+| Shopify, Etsy   | Not sent: neither has a condition field                                                                                                                                                            |
+
+**Not set** leaves it to each store: eBay uses the condition in the store's
+[listing defaults](/channels/ebay/#listing-defaults), and Google Shopping sends new.
+
+Some eBay categories don't take every grade. eBay then refuses the listing with its own message;
+choose another condition and the listing is sent again.
+
+## Mark as sold
+
+When a one-of-a-kind item sells somewhere Crossmart doesn't manage, such as at a market stall,
+**Mark as sold** makes sure it can't sell twice. It is on the product page's header and in the
+row menu (**⋯**) on **Products**.
+
+The confirmation names every store the item comes off. Confirming:
+
+- sets the available stock of every tracked variant to 0, recorded with the reason **Sold**
+  (units held for open orders stay held);
+- takes the product off every connected store that lists it, or whose automatic rule would add
+  it, the same as [removing it from a store](/sellers/publish-products/#remove-a-product-from-a-store),
+  so the rule doesn't add it back.
+
+The product stays in your catalog with its status unchanged. Marking it sold again changes
+nothing (**Already sold. Nothing changed.**), and a product with no stock left that is on no
+store shows **Sold** instead of the button. To sell it again, set its stock and add it back to
+its stores.
+
+<Aside>
+  Marking a product sold needs permission to edit products. AI agents can propose it with the MCP
+  tool `mark_product_sold` (it waits for your [approval](/sellers/agent-proposals/) like any other
+  change), and programs can call `POST /api/v1/workspaces/{workspaceId}/products/{productId}
+  /mark-sold`.
+</Aside>

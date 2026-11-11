@@ -15,7 +15,7 @@ You change stock in one place; every store follows.
 | **Available** | On hand minus held: what the stores can sell           |
 
 Every change is recorded with its reason, who made it and when, so the stock history of a variant
-shows how it got to its count. Open a variant's history from **Inventory**.
+shows how it got to its count. Open a variant's history from **Products → Stock**.
 
 ## How stock moves
 
@@ -23,14 +23,17 @@ shows how it got to its count. Open a variant's history from **Inventory**.
   the variant gets the lower quantity. See [Orders](/sellers/orders/).
 - **The order ships:** the held units leave your stock on hand.
 - **The order is cancelled:** its units are available again.
-- **You adjust stock** in **Inventory**, edit a product's quantities, or import a stock file.
+- **You adjust stock** in **Products → Stock**, edit a product's quantities, or import a stock file.
+- **You mark an item sold** with [Mark as sold](/sellers/products/#mark-as-sold): its available
+  stock goes to 0 and it comes off every store.
 
 When an order takes more than was available, for example two stores selling the last unit at the
-same moment, Crossmart records it as **Oversold** in **Activity**, so you can follow up.
+same moment, Crossmart records it as **Oversold** in the activity log (**Activity** on Home), so
+you can follow up.
 
 ## Adjust stock
 
-In **Inventory**, adjust a variant's stock with a reason:
+On **Products → Stock**, adjust a variant's stock with a reason:
 
 | Reason         | Use it for                                                   |
 | -------------- | ------------------------------------------------------------ |
@@ -42,11 +45,12 @@ In **Inventory**, adjust a variant's stock with a reason:
 | **Sold**       | A sale outside your connected stores, such as a market stall |
 
 You can add or remove units, or set the counted quantity. A note, such as an invoice number, is
-optional. To update many variants at once, import a two-column `sku,available` file under
-**Imports**.
+optional. To update many variants at once, click **Import** on **Products** and upload a
+two-column `sku,available` file.
 
-Filter **Inventory** by **In stock**, **Low stock**, **Out of stock** or **Untracked** to find
-what needs restocking.
+Filter **Stock** by **In stock**, **Low stock**, **Out of stock** or **Not tracked**, or sort it
+by least available, to find what needs restocking. The top of the tab shows what your stock is
+worth.
 
 ## Limit what one store sees
 

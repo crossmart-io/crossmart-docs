@@ -5,7 +5,7 @@ description: Changes from AI agents you connect, such as Claude or ChatGPT, wait
 
 When an AI agent you [connected](/agents/) (Claude, ChatGPT, Cursor or any other MCP client)
 wants to change your catalog, stock or listings, the change doesn't happen on its own. It waits
-under **Agent proposals** until you approve it. Reading is never held up: agents can look up
+under **Agent → Review** until you approve it. Reading is never held up: agents can look up
 products, stock, orders and reports as before.
 
 [Crossmart Agent](/sellers/crossmart-agent/), the agent inside Crossmart, asks for approval in its
@@ -13,8 +13,10 @@ own chat, so its changes don't appear here.
 
 ## Review a proposal
 
-Open **Agent proposals** in the sidebar. The number next to it, and the bell in the header, tell
-you when something is waiting. Each proposal shows:
+Open **Agent** in the sidebar, then the **Review** tab, and choose **Outside agents** (**AI
+suggestions**, the other choice, holds Crossmart's own AI content). The number on **Agent**, the
+**Needs attention** list on [Home](/sellers/home/), and the bell in the header tell you when
+something is waiting. Old links to `/agent-proposals` open this list. Each proposal shows:
 
 - What it does, in one line ("Add 20 units (stock received)", "Change the catalog price of
   MUG-1"), and the product or store it touches.
@@ -30,13 +32,14 @@ An approved change is made as the agent, with the access it has at that moment. 
 disconnected the agent in the meantime, or your role no longer allows the change, it is not made
 and the proposal shows why under **Failed**.
 
-The other tabs keep the history: **Applied**, **Rejected**, **Failed** and **Expired**. A proposal
+Waiting proposals are under **Waiting**; the other tabs keep the history: **Applied**,
+**Rejected**, **Failed** and **Expired**. A proposal
 nobody decides within 7 days expires, and nothing changes. The agent can check where its
 proposals stand, so it knows when you approved, rejected or let one expire.
 
 ## In the activity log
 
-An approved change appears in **Activity** credited to the agent, the person it acts for, and who
+An approved change appears in the activity log (**Activity** on Home) credited to the agent, the person it acts for, and who
 approved it: "Claude (agent, for Dana, approved by Lee)". Rejections are logged too. Crossmart
 Agent's page shows proposals in its event stream as they arrive.
 
@@ -44,12 +47,13 @@ Agent's page shows proposals in its event stream as they arrive.
 
 Owners and Admins can approve any proposal. Other roles need **Approve suggestions** and also the
 permission the change itself needs, such as **Edit products** for a price change: approving never
-lets anyone make a change their own role doesn't allow. Everyone who can see the suggestions inbox
-can see proposals.
+lets anyone make a change their own role doesn't allow. Everyone who can see AI suggestions can
+see proposals.
 
 ## Let agents apply changes directly
 
-Owners and Admins can change this under **Settings → Workspace → Outside agents' changes**:
+Owners and Admins can change this under **Settings → General → Outside agents' changes**, then
+**Save**:
 
 - **Wait for my approval** (the default for every workspace): changes become proposals.
 - **Apply directly**: agents make changes at once, within the access you gave them, and every
@@ -65,4 +69,5 @@ agent or API key cannot.
 - **Any MCP session**, including one set up with an API key: its changes wait.
 - **Scripts and integrations that call the API with an API key** (n8n, Zapier, your own code) are
   not agents here. They keep making changes directly, as they always have. Give such a key only
-  the role it needs, and revoke it under **Settings → API keys** when it's no longer used.
+  the role it needs, and revoke it under **Settings → Developers → API keys** when it's no longer
+  used.
