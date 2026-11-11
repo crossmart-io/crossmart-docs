@@ -74,7 +74,9 @@ export default defineConfig({
           label: 'Sellers',
           items: [
             { label: 'Getting started', link: '/sellers/' },
+            { label: 'Home and Needs attention', link: '/sellers/home/' },
             { label: 'Connect a store', link: '/sellers/connect-a-store/' },
+            { label: 'Products', link: '/sellers/products/' },
             { label: 'Publish products', link: '/sellers/publish-products/' },
             { label: 'Listing states', link: '/sellers/listing-states/' },
             { label: 'The listing editor', link: '/sellers/listing-editor/' },

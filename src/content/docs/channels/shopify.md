@@ -10,12 +10,14 @@ store's orders, and can import the products a store already has.
 
 ## Connect
 
-1. In **Channels**, click **Connect** on Shopify.
+1. In **Stores**, click **Connect** on Shopify.
 2. Enter the store's domain: the `your-store` part of `your-store.myshopify.com` (Shopify admin,
    **Settings → Domains**). Your own domain won't work here.
-3. Approve the Crossmart app on Shopify. You come back to the store's page.
+3. Approve the Crossmart app on Shopify. You come back to Crossmart.
 
-Shopify needs no further setup: you can publish right away.
+Shopify needs no further setup: you can publish right away. The
+[setup step](/sellers/connect-a-store/#the-setup-step) after connecting only asks whether to add
+all your active products.
 
 ### Permissions Crossmart asks for
 
@@ -31,7 +33,8 @@ and offers **Approve in Shopify**.
 
 ## Import your catalog
 
-On a connected store, **Import products from Shopify** reads every product of the store:
+On a connected store's **Settings** tab, **Import products from Shopify** reads every product of
+the store:
 
 | Shopify product                                 | What Crossmart does                                                                                              |
 | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
@@ -40,7 +43,8 @@ On a connected store, **Import products from Shopify** reads every product of th
 | No match                                        | Creates the product (a draft if it isn't active on Shopify), with its cost and its stock at the primary location |
 
 Imported products are in the store already. Variants that match nothing and products that break
-your catalog's rules are listed on the import's page under **Imports**. An import that stops
+your catalog's rules are listed on the import's page (**Products → Import → Import history**). An
+import that stops
 continues where it stopped, and running it again is safe.
 
 ## What Crossmart sends
@@ -49,6 +53,7 @@ continues where it stopped, and running it again is safe.
   barcode, price, compare-at price, cost, weight), and images. The handle is set when the product
   is first created on Shopify.
 - **Visibility:** a product that isn't active, or is hidden in this store, is sent as a draft.
+- **Condition:** not sent; Shopify has no condition field.
 - **Stock:** the available quantity at the store's primary location, after every change. Every 15
   minutes Crossmart checks the quantities Shopify shows and corrects any that drifted.
 - **Prices:** after the store's [pricing rule](/sellers/pricing/) or a fixed price for the store.

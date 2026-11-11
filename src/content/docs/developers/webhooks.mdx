@@ -11,7 +11,7 @@ the API from n8n, Zapier, Make or your agent's backend.
 
 ## Add an endpoint
 
-In the dashboard, open **Settings → Webhooks → Add endpoint**. Or call the API with a key whose
+In the dashboard, open **Settings → Developers → Webhooks → Add endpoint**. Or call the API with a key whose
 role holds `webhooks:manage` (Owner or Admin, see [Roles and permissions](/developers/permissions/)):
 
 ```bash
@@ -269,7 +269,7 @@ Without an SDK, in any language: split the header on `,`, take `t` and every `v1
 ### Endpoint health
 
 Every endpoint, in the list and on its own, carries two fields that tell you whether it is
-working. The dashboard shows them in **Settings → Webhooks**.
+working. The dashboard shows them in **Settings → Developers → Webhooks**.
 
 - `consecutiveFailures`: failed attempts since the last one that went through.
 - `lastDelivery`: the latest attempt, whatever event it carried, with `attemptedAt`, `outcome`

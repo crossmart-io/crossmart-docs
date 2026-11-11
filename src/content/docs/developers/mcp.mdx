@@ -45,13 +45,13 @@ limited to the scopes they approved: `catalog:read`, `catalog:write`, `orders:re
 `stores:write`, `reports:read`, `suggestions:write` and `webhooks:write` (to list and add
 [webhook endpoints](/developers/webhooks/#from-an-ai-agent)). The server offers only the tools those
 scopes cover, and the API checks every call. Sellers disconnect agents under
-**Settings → Connected agents**.
+**Settings → Developers → Connected agents**.
 
 ## Connect with an API key
 
 <Steps>
 
-1. In the dashboard, open **Settings → API keys** and create a key for the agent. Name it after
+1. In the dashboard, open **Settings → Developers → API keys** and create a key for the agent. Name it after
    the agent (for example "Claude Desktop") so it is easy to find and revoke.
 
 2. Pick the role that matches what the agent may do:
@@ -129,7 +129,7 @@ than a pasted key; see their [setup guides](/agents/).
 
 Unless the seller chooses otherwise, a write tool doesn't change anything when an agent calls it.
 It proposes the change, which waits for the seller under
-[Agent proposals](/sellers/agent-proposals/) with a before-and-after preview, and answers without
+[Agent → Review](/sellers/agent-proposals/) with a before-and-after preview, and answers without
 an error:
 
 ```json
@@ -147,7 +147,7 @@ it stands: `pending`, `applying`, `applied` (with the API's answer), `failed` (w
 `rejected`, or `expired` when nobody decides within 7 days. An approved change runs as the agent,
 and the activity log reads "Claude for Dana, approved by Lee".
 
-This applies to every MCP session, OAuth or API key. When the seller sets **Settings → Workspace →
+This applies to every MCP session, OAuth or API key. When the seller sets **Settings → General →
 Outside agents' changes** to **Apply directly**, write tools change things at once, as before.
 Read tools, `generate_content` (its results already wait as suggestions) and `ask_crossmart` never
 wait. Existing clients need no change: the tools, names and inputs are the same.
@@ -166,6 +166,7 @@ by scripts and integrations keep writing directly.
 | `get_product`               | One product with its variants, stock, options and images               |              |
 | `create_product`            | Adds a product with its variants (a draft unless `ACTIVE`)             |     Yes      |
 | `replace_product`           | Saves a whole product; variants left out are removed                   |     Yes      |
+| `mark_product_sold`         | Sold elsewhere: stock to 0 and off every store; safe to repeat         |     Yes      |
 | `list_inventory`            | Stock per variant: on hand, held for orders, available                 |              |
 | `adjust_stock`              | Adds, removes or sets stock, with a reason                             |     Yes      |
 | `list_orders`               | Orders from every store (Shopify, eBay…), without buyer details        |              |
@@ -196,8 +197,11 @@ by scripts and integrations keep writing directly.
 | `ask_crossmart`             | Answers questions about Crossmart itself from its docs, with sources   |              |
 | `get_proposal`              | Where a change the agent proposed stands: pending, applied, rejected…  |              |
 
-Read-only tools are marked `readOnlyHint`, and `replace_product`, `remove_product_from_store` and
-`save_item_specifics` are marked `destructiveHint`, so clients can ask before running them. When
+Read-only tools are marked `readOnlyHint`, and `replace_product`, `mark_product_sold`,
+`remove_product_from_store` and `save_item_specifics` are marked `destructiveHint`, so clients can
+ask before running them. `mark_product_sold` is also `idempotentHint`: calling it again changes
+nothing. `create_product` and `replace_product` take the item's `condition` (see
+[Products](/sellers/products/#item-condition)). When
 the API refuses a call, the tool returns the API's status, its `code` when it gives one, and its
 message (for example `Crossmart refused (404): Product not found`) instead of failing the session.
 
@@ -224,8 +228,8 @@ Then `retry_store_listing` sends the listing again.
 - **Connect a store.** Marketplaces ask the seller to approve access, so stores are connected in
   the dashboard, never by an agent.
 - **Apply AI content on their own** (with an Editor key). `generate_content` only creates pending
-  suggestions; a person with the Approver, Admin or Owner role reviews them in the dashboard's
-  Suggestions inbox.
+  suggestions; a person with the Approver, Admin or Owner role reviews them in the dashboard, under
+  **Agent → Review**.
 - **Act outside their workspace.** A key, or an OAuth token, only reaches its own workspace.
 - **Skip the seller's approval.** Unless the seller lets agents apply directly, every change waits
   for them, and only a person signed in to Crossmart can turn that off.

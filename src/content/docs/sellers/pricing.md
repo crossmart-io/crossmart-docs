@@ -28,8 +28,9 @@ The rule works in this order: convert the catalog price to the store's currency,
 percentage, add the fixed amount, round, then raise the result to the floor if it is below it. A
 compare-at price is only sent when it is above the price.
 
-The form shows the rule applied to one of the store's products as you type. **Save and apply**
-sends the new prices to the store at once.
+The form shows the rule applied to one of the store's products as you type. **Save**, in the bar
+at the bottom of the **Settings** tab, sends the new prices to the store at once. The same bar
+saves every other change on the tab, such as the listing defaults or the automatic rule.
 
 ## Fix one product's price in one store
 

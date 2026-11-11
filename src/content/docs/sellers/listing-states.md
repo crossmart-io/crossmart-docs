@@ -3,7 +3,7 @@ title: Listing states
 description: The eight states a product can have on a store (draft, needs details, ready, publishing, published, failed, removing, removed) and how to fix a listing that needs details or failed.
 ---
 
-Every product has one state on each store. You see it on the product's **Channels** card, in the
+Every product has one state on each store. You see it on the product's **Stores** card, in the
 store's **Listings** tab, and in the API and MCP tools as `displayState`.
 
 | State                | In the API      | Meaning                                                            | What to do                                    |
@@ -53,12 +53,21 @@ recovers by itself. **Try again** can't go through when:
 
 ## Find every listing that needs attention
 
-- The store's **Listings** tab filters by **Published**, **Not published yet**, **Needs details**,
-  **Failed**, **Removing** and **Removed**.
+- **Needs attention** on [Home](/sellers/home/) lists the latest failed listings across your
+  stores, each with **Fix**.
+- The store's **Listings** tab has four views:
+
+  | View                | Lists                                                                              |
+  | ------------------- | ---------------------------------------------------------------------------------- |
+  | **All**             | Every product in the store                                                         |
+  | **Live**            | Published                                                                          |
+  | **Needs attention** | Failed, then needs details, one section each                                       |
+  | **Not listed**      | Not published yet, removing, removed, and products not in the store (with **Add**) |
+
 - The map on the [Crossmart Agent](/sellers/crossmart-agent/) page counts each store's products
   that need details; click the count to open them.
 - The **Products** table filters **With listing errors** across all stores.
-- The **Channels** item in the sidebar counts failed listings.
+- The **Stores** item in the sidebar counts failed listings and stores to reconnect.
 
 AI agents connected to Crossmart read the same states and can fix most product-side problems for
 you; see [AI agents](/agents/).

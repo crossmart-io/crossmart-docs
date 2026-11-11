@@ -11,7 +11,7 @@ read the shop's orders to keep stock right, and send stock changes back to Etsy.
 
 ## Connect
 
-1. In **Channels**, click **Connect** on Etsy.
+1. In **Stores**, click **Connect** on Etsy.
 2. Enter your Etsy shop name.
 3. Sign in on Etsy and approve Crossmart. The shop you sign in with must be the one you named.
 
@@ -40,6 +40,8 @@ Create profiles on Etsy, then **Refresh shop** to read them.
 - Variations from up to three options, each with its own price, quantity and SKU.
 - Prices after the store's [pricing rule](/sellers/pricing/). Compare-at prices are not sent.
 - Stock after every change.
+- No [condition](/sellers/products/#item-condition): Etsy has no condition field (vintage items
+  are told apart by when they were made).
 
 Characters Etsy doesn't accept are removed from titles and tags. An inactive product stays a
 draft on Etsy. Removing a product from the store deactivates its listing; it is never deleted, and
