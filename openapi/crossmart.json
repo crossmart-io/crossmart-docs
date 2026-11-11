@@ -1778,6 +1778,46 @@
         ]
       }
     },
+    "/api/v1/workspaces/{workspaceId}/products/{productId}/mark-sold": {
+      "post": {
+        "description": "For an item that sold outside the connected stores, such as a one-of-a-kind item sold in person. Sets the available stock of every tracked variant to 0 (logged as sold) and takes the product off every connected store, as removing it by hand does, so it cannot sell twice. Idempotent: calling it again changes nothing and answers `alreadySold: true`.",
+        "operationId": "ProductsController_markSold_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductSaleDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mark a product sold",
+        "tags": [
+          "Catalog"
+        ]
+      }
+    },
     "/api/v1/workspaces/{workspaceId}/product-bulk-actions": {
       "post": {
         "description": "Set a status, add or remove tags, move every variant price by a percentage, or delete. Each action runs as one statement, scoped to the workspace.",
@@ -4883,6 +4923,50 @@
         "summary": "Each store’s products by display state, and the latest failed listings, as of now",
         "tags": [
           "Analytics"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspaceId}/attention": {
+      "get": {
+        "description": "Stores to reconnect, failed listings, outside agents’ proposals and AI suggestions waiting for review: a count and the latest few of each, for Home and a sidebar badge. Counts match the Channels, Agent proposals and Suggestions pages. A section is null without the permission its page needs (`channels:view` or `suggestions:view`).",
+        "operationId": "AttentionController_get_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items each section lists, latest first. The counts always cover everything.",
+            "schema": {
+              "minimum": 1,
+              "maximum": 20,
+              "default": 5,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttentionSummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "What needs the merchant now",
+        "tags": [
+          "Attention"
         ]
       }
     },
@@ -8493,6 +8577,21 @@
           "desc"
         ]
       },
+      "ProductCondition": {
+        "type": "string",
+        "enum": [
+          "NEW",
+          "NEW_OTHER",
+          "NEW_WITH_DEFECTS",
+          "LIKE_NEW",
+          "REFURBISHED",
+          "USED_EXCELLENT",
+          "USED_VERY_GOOD",
+          "USED_GOOD",
+          "USED_FAIR",
+          "FOR_PARTS"
+        ]
+      },
       "PriceRangeDto": {
         "type": "object",
         "properties": {
@@ -8662,6 +8761,14 @@
               }
             ]
           },
+          "condition": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProductCondition"
+              }
+            ]
+          },
           "vendor": {
             "type": "string",
             "nullable": true
@@ -8708,6 +8815,7 @@
           "handle",
           "title",
           "status",
+          "condition",
           "vendor",
           "productType",
           "variantCount",
@@ -8896,6 +9004,15 @@
               }
             ]
           },
+          "condition": {
+            "nullable": true,
+            "description": "The item’s condition; null lists it in each store’s default condition",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProductCondition"
+              }
+            ]
+          },
           "optionNames": {
             "example": [
               "Size",
@@ -8936,6 +9053,7 @@
           "productType",
           "tags",
           "status",
+          "condition",
           "optionNames",
           "variants",
           "media",
@@ -9052,6 +9170,15 @@
             "allOf": [
               {
                 "$ref": "#/components/schemas/ProductStatus"
+              }
+            ]
+          },
+          "condition": {
+            "nullable": true,
+            "description": "The item’s condition, mapped to each store’s own conditions. Left out, an update keeps the current one; null clears it. Without one, each store lists it in its default condition.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProductCondition"
               }
             ]
           },
@@ -9189,6 +9316,15 @@
               }
             ]
           },
+          "condition": {
+            "nullable": true,
+            "description": "The item’s condition, mapped to each store’s own conditions. Left out, an update keeps the current one; null clears it. Without one, each store lists it in its default condition.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProductCondition"
+              }
+            ]
+          },
           "optionNames": {
             "example": [
               "Size",
@@ -9252,6 +9388,64 @@
             "description": "The \"was\" price buyers see struck through; null removes it"
           }
         }
+      },
+      "SoldProductStoreDto": {
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "channel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChannelType"
+              }
+            ]
+          },
+          "displayName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "connectionId",
+          "channel",
+          "displayName"
+        ]
+      },
+      "ProductSaleDto": {
+        "type": "object",
+        "properties": {
+          "product": {
+            "description": "The product as it is now, with every tracked variant at 0 available",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProductDto"
+              }
+            ]
+          },
+          "unitsCleared": {
+            "type": "number",
+            "description": "Available units set to 0 across its tracked variants"
+          },
+          "removedFromStores": {
+            "description": "The stores it was taken off. Their listings are ended on the channel in the background, like removing a product from a store by hand.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SoldProductStoreDto"
+            }
+          },
+          "alreadySold": {
+            "type": "boolean",
+            "description": "True when it was sold already (no stock left, on no store): nothing changed"
+          }
+        },
+        "required": [
+          "product",
+          "unitsCleared",
+          "removedFromStores",
+          "alreadySold"
+        ]
       },
       "BulkProductAction": {
         "type": "string",
@@ -9946,6 +10140,7 @@
           "product_created",
           "product_updated",
           "product_deleted",
+          "product_marked_sold",
           "products_bulk_updated",
           "products_bulk_deleted",
           "products_imported",
@@ -14156,13 +14351,227 @@
           "failedListings"
         ]
       },
-      "SuggestionStatus": {
+      "AttentionStoreReason": {
         "type": "string",
         "enum": [
-          "PENDING",
-          "APPLIED",
-          "REJECTED",
-          "STALE"
+          "needs_reauth",
+          "error",
+          "disconnected_with_listings"
+        ]
+      },
+      "AttentionStoreDto": {
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "channel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChannelType"
+              }
+            ]
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChannelConnectionStatus"
+              }
+            ]
+          },
+          "statusReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "reason": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AttentionStoreReason"
+              }
+            ]
+          },
+          "liveListings": {
+            "type": "number",
+            "description": "Listings still on the channel (not delisted)"
+          }
+        },
+        "required": [
+          "connectionId",
+          "channel",
+          "displayName",
+          "status",
+          "statusReason",
+          "reason",
+          "liveListings"
+        ]
+      },
+      "AttentionStoresDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number",
+            "description": "Stores to reconnect or fix, and disconnected ones still listing"
+          },
+          "items": {
+            "description": "The latest ones, up to `limit`",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttentionStoreDto"
+            }
+          }
+        },
+        "required": [
+          "count",
+          "items"
+        ]
+      },
+      "AttentionListingGroupDto": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "productTitle": {
+            "type": "string"
+          },
+          "imageUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "connectionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "channel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChannelType"
+              }
+            ]
+          },
+          "storeName": {
+            "type": "string"
+          },
+          "failedListings": {
+            "type": "number",
+            "description": "Failed listings of the product on this store"
+          },
+          "lastError": {
+            "type": "string",
+            "nullable": true,
+            "description": "The channel’s latest refusal"
+          },
+          "missingRequirement": {
+            "nullable": true,
+            "description": "What the channel asks for, when details are missing rather than an error",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublishRequirement"
+              }
+            ]
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "productId",
+          "productTitle",
+          "imageUrl",
+          "connectionId",
+          "channel",
+          "storeName",
+          "failedListings",
+          "lastError",
+          "missingRequirement",
+          "updatedAt"
+        ]
+      },
+      "AttentionListingsDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number",
+            "description": "Failed listings across the stores, as the Channels page counts them"
+          },
+          "items": {
+            "description": "The latest products with failed listings, one per product and store",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttentionListingGroupDto"
+            }
+          }
+        },
+        "required": [
+          "count",
+          "items"
+        ]
+      },
+      "AttentionProposalDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "agentName": {
+            "type": "string",
+            "example": "Claude"
+          },
+          "toolName": {
+            "type": "string",
+            "example": "update_variant_price"
+          },
+          "toolTitle": {
+            "type": "string",
+            "example": "Change a variant’s price"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "agentName",
+          "toolName",
+          "toolTitle",
+          "summary",
+          "createdAt",
+          "expiresAt"
+        ]
+      },
+      "AttentionProposalsDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number",
+            "description": "Outside agents’ changes waiting for approval"
+          },
+          "items": {
+            "description": "The latest ones, up to `limit`",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttentionProposalDto"
+            }
+          }
+        },
+        "required": [
+          "count",
+          "items"
         ]
       },
       "SuggestionKind": {
@@ -14170,6 +14579,132 @@
         "enum": [
           "listing_title",
           "listing_description"
+        ]
+      },
+      "AttentionSuggestionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "productId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "productTitle": {
+            "type": "string"
+          },
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SuggestionKind"
+              }
+            ]
+          },
+          "connectionId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "storeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "productId",
+          "productTitle",
+          "kind",
+          "connectionId",
+          "storeName",
+          "createdAt"
+        ]
+      },
+      "AttentionSuggestionsDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number",
+            "description": "AI suggestions waiting for review"
+          },
+          "items": {
+            "description": "The latest ones, up to `limit`",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttentionSuggestionDto"
+            }
+          }
+        },
+        "required": [
+          "count",
+          "items"
+        ]
+      },
+      "AttentionSummaryDto": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number",
+            "description": "The sum of the visible sections’ counts, for one badge"
+          },
+          "stores": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AttentionStoresDto"
+              }
+            ]
+          },
+          "listings": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AttentionListingsDto"
+              }
+            ]
+          },
+          "proposals": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AttentionProposalsDto"
+              }
+            ]
+          },
+          "suggestions": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AttentionSuggestionsDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "total",
+          "stores",
+          "listings",
+          "proposals",
+          "suggestions"
+        ]
+      },
+      "SuggestionStatus": {
+        "type": "string",
+        "enum": [
+          "PENDING",
+          "APPLIED",
+          "REJECTED",
+          "STALE"
         ]
       },
       "SuggestionConnectionDto": {
