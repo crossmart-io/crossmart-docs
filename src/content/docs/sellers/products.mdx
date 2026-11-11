@@ -100,7 +100,8 @@ its stores.
 
 <Aside>
   Marking a product sold needs permission to edit products. AI agents can propose it with the MCP
-  tool `mark_product_sold` (it waits for your [approval](/sellers/agent-proposals/) like any other
-  change), and programs can call `POST /api/v1/workspaces/{workspaceId}/products/{productId}
+  tool `mark_product_sold` (it waits for your [approval](/sellers/agent-proposals/), like every
+  change except adding a new draft), and programs can call `POST /api/v1/workspaces/{workspaceId}
+  /products/{productId}
   /mark-sold`.
 </Aside>

@@ -147,15 +147,32 @@ it stands: `pending`, `applying`, `applied` (with the API's answer), `failed` (w
 `rejected`, or `expired` when nobody decides within 7 days. An approved change runs as the agent,
 and the activity log reads "Claude for Dana, approved by Lee".
 
+**New drafts don't wait.** `create_product` with no `status`, or with `DRAFT`, creates the product
+at once: a draft isn't listed or for sale anywhere. The tool answers with the product, then a
+second block:
+
+```json
+{
+  "status": "applied",
+  "exemption": "new_draft",
+  "message": "Created at once as a draft: new drafts need no approval. …"
+}
+```
+
+With `status: "ACTIVE"`, `create_product` is proposed like any other change, so leave `status` out
+unless the seller asked for an active product. Making a draft active, publishing it and changing
+it later all wait. The sandbox's product limit still applies.
+
 This applies to every MCP session, OAuth or API key. When the seller sets **Settings → General →
 Outside agents' changes** to **Apply directly**, write tools change things at once, as before.
 Read tools, `generate_content` (its results already wait as suggestions) and `ask_crossmart` never
 wait. Existing clients need no change: the tools, names and inputs are the same.
 
 **Over the REST API**, an agent's OAuth token gets `403` with `code: agent_approval_required` for
-a direct write while approvals are on. It proposes instead with
+a direct write while approvals are on, except `POST …/products` for a draft. It proposes instead with
 `POST /api/v1/workspaces/{workspaceId}/agent-proposals` and `{ "tool": "<MCP tool>", "input": {…} }`;
-the answer's `outcome` is `proposed` or `apply_directly` (then make the call itself). API keys used
+the answer's `outcome` is `proposed` or `apply_directly` (then make the call itself; with
+`exemption: "new_draft"` only this call skips approval). API keys used
 by scripts and integrations keep writing directly.
 
 ## Tools
@@ -164,7 +181,7 @@ by scripts and integrations keep writing directly.
 | --------------------------- | ---------------------------------------------------------------------- | :----------: |
 | `list_products`             | Products by title, with price range, stock and status                  |              |
 | `get_product`               | One product with its variants, stock, options and images               |              |
-| `create_product`            | Adds a product with its variants (a draft unless `ACTIVE`)             |     Yes      |
+| `create_product`            | Adds a product with its variants (a draft, at once, unless `ACTIVE`)   |     Yes      |
 | `replace_product`           | Saves a whole product; variants left out are removed                   |     Yes      |
 | `mark_product_sold`         | Sold elsewhere: stock to 0 and off every store; safe to repeat         |     Yes      |
 | `list_inventory`            | Stock per variant: on hand, held for orders, available                 |              |
