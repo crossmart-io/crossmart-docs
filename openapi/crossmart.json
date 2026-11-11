@@ -1503,6 +1503,7 @@
         ]
       },
       "post": {
+        "description": "A connected agent may create a draft (status left out or DRAFT) even while the workspace approves agents’ changes; any other status is refused with `agent_approval_required`, so the agent proposes it.",
         "operationId": "ProductsController_create_v1",
         "parameters": [
           {
@@ -3299,7 +3300,7 @@
     },
     "/api/v1/workspaces/{workspaceId}/channel-connections/{connectionId}/products": {
       "get": {
-        "description": "Products the store should have or still has: listed, pending (being published), failed or removing (being delisted). Pass `state=excluded` for the catalog products it does not have. `displayState` narrows them to the state a merchant reads (`needs_details`, `ready`, …). Counts per state follow `search`, so they can label filter tabs.",
+        "description": "Products the store should have or still has: listed, pending (being published), failed or removing (being delisted). Pass `state=excluded` for the catalog products it does not have. `displayState` narrows them to the state a merchant reads (`needs_details`, `ready`, …), and `view` to one tab of a store page (`live`, `needs_attention`, …). Counts per state, and of the products that need details or attention, follow `search`, so they can label filter tabs.",
         "operationId": "ChannelProductsController_listProducts_v1",
         "parameters": [
           {
@@ -3333,6 +3334,15 @@
             "description": "Only products showing this display state. Without `state` it looks at every catalog product, so `draft` and `removed` find those not in the store.",
             "schema": {
               "$ref": "#/components/schemas/ListingDisplayState"
+            }
+          },
+          {
+            "name": "view",
+            "required": false,
+            "in": "query",
+            "description": "Only the products of one view, so each tab of a store page is one request: `all` (in the store), `live` (listed), `needs_attention` (failed or needing details) or `not_listed` (pending, removing, removed by hand or excluded). It combines with `state` and `displayState`",
+            "schema": {
+              "$ref": "#/components/schemas/ChannelProductView"
             }
           },
           {
@@ -4967,6 +4977,38 @@
         "summary": "What needs the merchant now",
         "tags": [
           "Attention"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspaceId}/getting-started": {
+      "get": {
+        "description": "Counts of products, stores and live listings, whether the email is confirmed, and the steps to a first listing: each says whether it is done, whether the seller (in the app, with a link) or an agent (with the tools named) takes it. For agents that connect to an empty workspace.",
+        "operationId": "GettingStartedController_get_v1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GettingStartedDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Where a new account stands, and what to do next",
+        "tags": [
+          "Getting started"
         ]
       }
     },
@@ -10708,6 +10750,15 @@
               }
             ]
           },
+          "connectionId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Set with `connected`: the id of the connection that was connected"
+          },
+          "reconnected": {
+            "type": "boolean",
+            "description": "Set with `connected` to `true` when the account was connected before (a re-auth), so the web app does not offer the new store setup"
+          },
           "error": {
             "description": "Set when connecting failed",
             "allOf": [
@@ -11770,6 +11821,15 @@
           "excluded"
         ]
       },
+      "ChannelProductView": {
+        "type": "string",
+        "enum": [
+          "all",
+          "live",
+          "needs_attention",
+          "not_listed"
+        ]
+      },
       "ChannelProductSort": {
         "type": "string",
         "enum": [
@@ -11957,6 +12017,14 @@
           "excluded": {
             "type": "number",
             "description": "Neither selected nor on the channel"
+          },
+          "needsDetails": {
+            "type": "number",
+            "description": "Products whose display state is `needs_details`: selected, and the store setup or the product lacks something publishing needs. Some may also be counted as `failed`"
+          },
+          "needsAttention": {
+            "type": "number",
+            "description": "Products that are failed or need details, each counted once: what `view=needs_attention` lists. Its failed part is `failed`, the same listings the attention summary counts"
           }
         },
         "required": [
@@ -11965,7 +12033,9 @@
           "failed",
           "removing",
           "removed_by_hand",
-          "excluded"
+          "excluded",
+          "needsDetails",
+          "needsAttention"
         ]
       },
       "ChannelProductPageDto": {
@@ -14698,6 +14768,178 @@
           "suggestions"
         ]
       },
+      "GettingStartedStep": {
+        "type": "string",
+        "enum": [
+          "verify_email",
+          "claim_account",
+          "add_products",
+          "review_proposals",
+          "connect_store",
+          "publish"
+        ],
+        "description": "The first step still to take; null once every step is done"
+      },
+      "GettingStartedStepState": {
+        "type": "string",
+        "enum": [
+          "done",
+          "todo",
+          "blocked"
+        ]
+      },
+      "GettingStartedStepOwner": {
+        "type": "string",
+        "enum": [
+          "merchant",
+          "agent"
+        ],
+        "description": "`merchant`: only the seller can take it, in the app; `agent`: with `tools`"
+      },
+      "GettingStartedStepDto": {
+        "type": "object",
+        "properties": {
+          "step": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GettingStartedStep"
+              }
+            ]
+          },
+          "state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GettingStartedStepState"
+              }
+            ]
+          },
+          "owner": {
+            "description": "`merchant`: only the seller can take it, in the app; `agent`: with `tools`",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GettingStartedStepOwner"
+              }
+            ]
+          },
+          "title": {
+            "type": "string",
+            "example": "Connect a store"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "nullable": true,
+            "description": "The page of the web app where the seller takes it"
+          },
+          "tools": {
+            "example": [
+              "create_product"
+            ],
+            "description": "Agent tools",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "step",
+          "state",
+          "owner",
+          "title",
+          "detail",
+          "url",
+          "tools"
+        ]
+      },
+      "StoreConnectLinkDto": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChannelType"
+              }
+            ]
+          },
+          "url": {
+            "type": "string",
+            "description": "Opens the Stores page with this channel’s connect dialog"
+          }
+        },
+        "required": [
+          "channel",
+          "url"
+        ]
+      },
+      "GettingStartedDto": {
+        "type": "object",
+        "properties": {
+          "emailVerified": {
+            "type": "boolean",
+            "description": "Whether the caller (or the key’s creator) confirmed their email"
+          },
+          "unclaimedSandbox": {
+            "type": "boolean",
+            "description": "An account an AI agent opened that nobody has claimed yet"
+          },
+          "products": {
+            "type": "number"
+          },
+          "connectedStores": {
+            "type": "number",
+            "description": "Stores that are not disconnected"
+          },
+          "liveListings": {
+            "type": "number",
+            "description": "Listings live on a store"
+          },
+          "pendingProposals": {
+            "type": "number",
+            "description": "Outside agents’ changes waiting for approval"
+          },
+          "agentChangesNeedApproval": {
+            "type": "boolean",
+            "description": "Whether outside agents’ changes wait for the seller’s approval"
+          },
+          "nextStep": {
+            "nullable": true,
+            "description": "The first step still to take; null once every step is done",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GettingStartedStep"
+              }
+            ]
+          },
+          "steps": {
+            "description": "The steps that apply, in order",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GettingStartedStepDto"
+            }
+          },
+          "connectStoreLinks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StoreConnectLinkDto"
+            }
+          }
+        },
+        "required": [
+          "emailVerified",
+          "unclaimedSandbox",
+          "products",
+          "connectedStores",
+          "liveListings",
+          "pendingProposals",
+          "agentChangesNeedApproval",
+          "nextStep",
+          "steps",
+          "connectStoreLinks"
+        ]
+      },
       "SuggestionStatus": {
         "type": "string",
         "enum": [
@@ -15851,7 +16093,7 @@
           "proposed",
           "apply_directly"
         ],
-        "description": "`proposed`: it waits for the seller. `apply_directly`: the workspace lets agents make changes at once, so make the call itself."
+        "description": "`proposed`: it waits for the seller. `apply_directly`: make the call itself, because the workspace lets agents make changes at once or the call needs no approval (`exemption`)."
       },
       "AgentProposalStatus": {
         "type": "string",
@@ -15990,11 +16232,18 @@
           "createdAt"
         ]
       },
+      "AgentApprovalExemption": {
+        "type": "string",
+        "enum": [
+          "new_draft"
+        ],
+        "description": "Set with `apply_directly` when the workspace approves agents’ changes but this call needs none: `new_draft` for `create_product` with no status or DRAFT. Null otherwise."
+      },
       "AgentProposalSubmissionDto": {
         "type": "object",
         "properties": {
           "outcome": {
-            "description": "`proposed`: it waits for the seller. `apply_directly`: the workspace lets agents make changes at once, so make the call itself.",
+            "description": "`proposed`: it waits for the seller. `apply_directly`: make the call itself, because the workspace lets agents make changes at once or the call needs no approval (`exemption`).",
             "allOf": [
               {
                 "$ref": "#/components/schemas/AgentProposalOutcome"
@@ -16013,12 +16262,22 @@
                 "$ref": "#/components/schemas/AgentProposalDto"
               }
             ]
+          },
+          "exemption": {
+            "nullable": true,
+            "description": "Set with `apply_directly` when the workspace approves agents’ changes but this call needs none: `new_draft` for `create_product` with no status or DRAFT. Null otherwise.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AgentApprovalExemption"
+              }
+            ]
           }
         },
         "required": [
           "outcome",
           "message",
-          "proposal"
+          "proposal",
+          "exemption"
         ]
       },
       "AgentProposalPageDto": {
