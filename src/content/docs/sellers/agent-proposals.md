@@ -1,12 +1,18 @@
 ---
 title: Agent proposals
-description: Changes from AI agents you connect, such as Claude or ChatGPT, wait for your approval in Crossmart. See what each change would do, approve or reject it, or let agents apply changes directly.
+description: Changes from AI agents you connect, such as Claude or ChatGPT, wait for your approval in Crossmart, except new products added as drafts. See what each change would do, approve or reject it, or let agents apply changes directly.
 ---
 
 When an AI agent you [connected](/agents/) (Claude, ChatGPT, Cursor or any other MCP client)
 wants to change your catalog, stock or listings, the change doesn't happen on its own. It waits
 under **Agent → Review** until you approve it. Reading is never held up: agents can look up
 products, stock, orders and reports as before.
+
+One change doesn't wait: **adding a new product as a draft**. A draft isn't listed or for sale
+anywhere, so the agent can add your items right away. You'll find them under **Products**, and
+the activity log credits them to the agent. Making a draft active, publishing it to a store, and
+any later change to it (price, stock, text, marking it sold, deleting it) still wait for you. If
+the agent adds a product as active, that waits for your approval too.
 
 [Crossmart Agent](/sellers/crossmart-agent/), the agent inside Crossmart, asks for approval in its
 own chat, so its changes don't appear here.
@@ -55,7 +61,8 @@ see proposals.
 Owners and Admins can change this under **Settings → General → Outside agents' changes**, then
 **Save**:
 
-- **Wait for my approval** (the default for every workspace): changes become proposals.
+- **Wait for my approval** (the default for every workspace): changes become proposals, except
+  new products added as drafts.
 - **Apply directly**: agents make changes at once, within the access you gave them, and every
   change is still in the activity log.
 
